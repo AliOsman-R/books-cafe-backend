@@ -2,14 +2,13 @@ const User = require('../models/userModel')
 const asyncHandler = require('../middleware/tryCatch');
 const bcrypt = require('bcrypt')
 const { sendEmail } = require('../utils/email');
+const Cafe = require('../models/cafeModel')
 const crypto = require('crypto');
 const Token = require('../models/tokenModel');
-const { deleteImage, storeImage, getImage } = require('../utils/Images');
-
 
 const userUpdateInfo = asyncHandler( async (req, res, next) => {
-    const {profileImage,email,...rest} = req.body;
-    const file = req.file 
+    const {email,...rest} = req.body;
+    let emailMessage='';
     
     const user = await User.findOne({_id:req.params.id})
     if(!user || ! user._id.equals(req.user._id))
@@ -17,12 +16,7 @@ const userUpdateInfo = asyncHandler( async (req, res, next) => {
         res.status(403)
         throw new Error(`Permission forbidden or no user found with this id "${req.params.id}"`)
     }
-    const data ={...rest}
-    let imageUrl = '';
-    let userImage ='';
-    let emailMessage='';
     
-
     if(email)
     {
         const token = await Token.create({
@@ -41,43 +35,26 @@ const userUpdateInfo = asyncHandler( async (req, res, next) => {
         emailMessage='An email sent to your email address please verify it to use the new email'
         data['newEmail'] = email;
     }
-
-    if(file)
-    {     
-        const imageName = user._id.toString()
-
-        await storeImage(file,imageName)
-
-        if(user.profileImage)
-            await deleteImage(user.profileImage)
-
-        user.profileImage = imageName;
-        await user.save()
-
-        imageUrl = await getImage(imageName)
-    }
-
-    if(profileImage === '')
-    {
-        if(user.profileImage)
-            await deleteImage(user.profileImage)
-        user.profileImage = '';
-        imageUrl = await user.save()
-    }
-
-    const updatedUserInfo = await User.findOneAndUpdate({_id:user._id}, data, {new: true})
-
-    if((!file && profileImage !== '' && !profileImage) && updatedUserInfo.profileImage !== '')
-        userImage = await getImage(updatedUserInfo.profileImage)
-
-    
+  
+    const updatedUserInfo = await User.findOneAndUpdate({_id:user._id}, rest, {new: true})
     const updatedUser ={
         _id:updatedUserInfo._id,
         email:updatedUserInfo.email,
         name:updatedUserInfo.name, 
         phoneNumber:updatedUserInfo?.phoneNumber || '',
         role:updatedUserInfo.role,
-        profileImage:imageUrl?(file? imageUrl : imageUrl?.profileImage ): userImage
+        firstAddress:updatedUserInfo.firstAddress,
+        secondAddress:updatedUserInfo.secondAddress,
+        profileImage:updatedUserInfo.profileImage
+    }
+    if(updatedUser.role === 'owner')
+    {
+        const cafe = await Cafe.findOne({userId:updatedUserInfo._id})
+        if(cafe)
+        {
+            cafe.ownerImage = updatedUserInfo.profileImage
+            await cafe.save()
+        }
     }
 
     res.status(200).json({message:`information has been updated, ${emailMessage} `,user:updatedUser})

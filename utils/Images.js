@@ -7,7 +7,6 @@ const bucketName = process.env.BUKET_NAME
 
 exports.getImage = async (imageName)  => {
     try{
-
         const imageUrl = await getSignedUrl(s3,
             new GetObjectCommand({
               Bucket: bucketName,

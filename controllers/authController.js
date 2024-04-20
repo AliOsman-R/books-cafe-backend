@@ -18,8 +18,8 @@ const userSignup = asyncHandler(async(req,res) => {
         throw new Error("all fields are required");
     }
 
-    const avaiableUser = await User.findOne({email:email.toLowerCase()})
-    if(avaiableUser)
+    const foundUser = await User.findOne({email:email.toLowerCase()})
+    if(foundUser)
     {
         res.status(400)
         throw new Error(`User already registered with this email ${email}`);
@@ -27,12 +27,16 @@ const userSignup = asyncHandler(async(req,res) => {
 
     const hashedPassword = await bcrypt.hash(password,10)
 
+    const image = await Image.create({imageName:''})
+
     const user = await User.create({
         email:email.toLowerCase(),
         name,
+        imageId:image._id,
         password:hashedPassword,
         role:'customer',
     })
+
 
     const token = await Token.create({
         userId:user._id,
@@ -106,71 +110,71 @@ const userLogin = asyncHandler(async(req,res, next) => {
         throw new Error("all fields are required");
     }
 
-    const avaiableUser = await User.findOne({email:email.toLowerCase()})
-    if(!avaiableUser)
+    const foundUser = await User.findOne({email:email.toLowerCase()}).populate({ path: 'imageId'}).exec();
+    
+    if(!foundUser || !(await bcrypt.compare(password, foundUser?.password)))
     {
         res.status(401)
         throw new Error("Email or Password is not valid");
     }
 
-    if(avaiableUser.profileImage)
-        imageUrl = await getImage(avaiableUser.profileImage)
-
-    const isValidPass = await bcrypt.compare(password, avaiableUser.password)
-
-    if(avaiableUser && isValidPass && avaiableUser.verified)
+    if(!foundUser.verified)
     {
-        const token = jwt.sign({
-            user:{
-                email:avaiableUser.email,
-                _id:avaiableUser._id,
-                name:avaiableUser.name,
-                role:avaiableUser.role,
-            }
-        },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'5h'})
-
-        res.cookie('access_token',token, { httpOnly: true, secure: true, maxAge: 18000000 })
-        const user = {
-            email:avaiableUser.email,
-            _id:avaiableUser._id,
-            name:avaiableUser.name,
-            role:avaiableUser.role,
-            firstAddress:avaiableUser.firstAddress,
-            secondAddress:avaiableUser.secondAddress,
-            profileImage:imageUrl|| ''
-        }
-        res.status(200).json({auth: true, user})
-    }
-    else
-    {
-        if(!avaiableUser.verified && avaiableUser && isValidPass)
+        let token = await Token.findOne({userId:foundUser._id, type:'email'})
+        if(!token)
         {
-            let token = await Token.findOne({userId:avaiableUser._id, type:'email'})
-            if(!token)
-            {
-                token = await Token.create({
-                   userId:avaiableUser._id,
-                   token:crypto.randomBytes(32).toString("hex"),
-                   type:"email"
-               })
+            token = await Token.create({
+               userId:foundUser._id,
+               token:crypto.randomBytes(32).toString("hex"),
+               type:"email"
+           })
+       
+           const url = `${process.env.BASE_URL}/email/${foundUser._id}/verify/${token.token}`
+           const htmlStr = `
+                <h2>Verify your email address</h2>
+                <p>To continue setting up your CafeX account,</p>
+                <p>Please verify that this is your email address by clicking the link below:</p>
+            `
            
-               const url = `${process.env.BASE_URL}/email/${avaiableUser._id}/verify/${token.token}`
-               const htmlStr = `
-                    <h2>Verify your email address</h2>
-                    <p>To continue setting up your CafeX account,</p>
-                    <p>Please verify that this is your email address by clicking the link below:</p>
-                `
-               
-               await sendEmail(avaiableUser.email, 'CafeX - Verify your email',{htmlStr,url,btn:"Verify email address"})
-            }
-
-            res.status(401)
-            throw new Error("Please verify your email to access, an email sent to your email address");
+           await sendEmail(foundUser.email, 'CafeX - Verify your email',{htmlStr,url,btn:"Verify email address"})
         }
 
         res.status(401)
-        throw new Error("Email or Password is not valid");
+        throw new Error("Please verify your email to access, an email sent to your email address");
     }
+
+    const token = jwt.sign({
+        user:{
+            email:foundUser.email,
+            _id:foundUser._id,
+            name:foundUser.name,
+            role:foundUser.role,
+        }
+    },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'5h'})
+
+    res.cookie('access_token',token, { httpOnly: true, secure: true, maxAge: 18000000 })
+    
+    if(foundUser.imageId.imageName)
+    {
+        imageUrl = await getImage(foundUser.imageId.imageName)
+        if(imageUrl)
+        {
+            foundUser.profileImage = imageUrl
+            await foundUser.save()
+        }
+    }
+    
+    const user = {
+        email:foundUser.email,
+        _id:foundUser._id,
+        name:foundUser.name,
+        role:foundUser.role,
+        firstAddress:foundUser.firstAddress,
+        secondAddress:foundUser.secondAddress,
+        profileImage:imageUrl || '',
+        imageId:foundUser.imageId._id
+    }
+    res.status(200).json({auth: true, user})
 })
 
 const userForgotPass = asyncHandler( async (req, res, next) => {
@@ -221,7 +225,6 @@ const userVerifyResetPass = asyncHandler( async (req, res, next) => {
     res.status(200).json({ message: "Token verified successfully" });
 
 })
-
 
 const userResetPass = asyncHandler( async (req, res, next) => {
 

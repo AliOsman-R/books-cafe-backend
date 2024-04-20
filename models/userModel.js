@@ -3,52 +3,54 @@ const mongoose = require('mongoose')
 const userSchema = mongoose.Schema({
     name:{
         type:String,
-        required: [true]
+        required: true
     },
     email:{
         type:String,
-        required:[true],
+        required:true,
         unique:true
     },
     password:{
         type:String,
-        required:[true]
+        required:true
     },
     phoneNumber:{
         type:String,
-        required:[false],
+        required:false,
     },
     role:{
         type:String,
-        required:[true],
+        required:true,
     },
     newEmail:{
         type:String,
-        required:[false],
+        required:false,
     },
     profileImage:{
         type:String,
-        required:[false],
+        required:false,
         default:''
+    },
+    imageId:{
+        type:mongoose.Schema.Types.ObjectId,
+        required:true,
+        ref:'Image'
+    },
+    cafeId:{
+        type:mongoose.Schema.Types.ObjectId,
+        required:false,
+        ref:'Cafes'
     },
     firstAddress:{
         type:String,
-        required:[false],
+        required:false,
         default:''
     },
     secondAddress:{
         type:String,
-        required:[false],
+        required:false,
         default:''
     },
-    // cafeId:{
-    //     type:mongoose.Schema.Types.ObjectId,
-    //     required: function() {
-    //         return this.role === 'owner';
-    //     },
-    //     default:null
-    //     // ref:'Cafe'
-    // },
     verified:{
         type:Boolean,
         default:false
@@ -57,5 +59,8 @@ const userSchema = mongoose.Schema({
 {
     timestamps:true
 })
+
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('User', userSchema)

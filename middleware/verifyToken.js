@@ -1,8 +1,8 @@
 const asyncHandler = require('../middleware/tryCatch');
-const Image = require('../models/imageModel');
+// const Image = require('../models/imageModel');
 const User = require('../models/userModel')
 const jwt = require('jsonwebtoken');
-const { getImage } = require('../utils/Images');
+// const { getImage } = require('../utils/Images');
 
 const isUserAuth = asyncHandler( async (req, res, next) => {
     const token = req.headers.cookie?.split('=')[1]
@@ -12,7 +12,6 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
 
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
         try {
-            
             if (error ) {
                 res.clearCookie('access_token')
                 req.auth = false
@@ -21,29 +20,28 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
             }
 
             const decodedUser = decode.user
+            const foundUser = await User.findOne({email:decodedUser.email});
 
-            const avaiableUser = await User.findOne({email:decodedUser.email});
-
-            if (!avaiableUser) {
+            if (!foundUser) {
                 res.clearCookie('access_token')
                 req.auth = false
                 return next()
             }
 
             const user = {
-                email:avaiableUser.email,
-                phoneNumber:avaiableUser.phoneNumber,
-                _id:avaiableUser._id,
-                name:avaiableUser.name,
-                role:avaiableUser.role,
-                firstAddress:avaiableUser.firstAddress,
-                secondAddress:avaiableUser.secondAddress
+                email:foundUser.email,
+                phoneNumber:foundUser.phoneNumber,
+                _id:foundUser._id,
+                name:foundUser.name,
+                role:foundUser.role,
+                firstAddress:foundUser.firstAddress,
+                secondAddress:foundUser.secondAddress,
+                profileImage:foundUser.profileImage,
+                imageId:foundUser.imageId,
             }
 
-            const imageUrl = await getImage(avaiableUser.profileImage)
-
             const refreshToken = generateAccessToken(user)
-            req.user = {...user,profileImage:imageUrl || ''}
+            req.user = user
             req.refreshToken = refreshToken
             req.auth = true
             next()
