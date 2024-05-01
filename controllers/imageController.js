@@ -7,7 +7,6 @@ const generateFileName = (bytes = 32) => crypto.randomBytes(bytes).toString('hex
 
 const uploadImage = asyncHandler ( async (req, res, next) => {
     const foundImage = await Image.findOne({_id:req.params.id})
-    console.log(req.body.image === '')
 
     if(!foundImage)
     {
@@ -86,18 +85,17 @@ const updateImages = asyncHandler ( async (req, res, next) => {
             return false;
         })
     );
-
+    
     const imagesToRetain = originalImages.filter(oriImage =>
         imagesChanged.some(changedImage => {
             if(changedImage?.imageId)
-                return changedImage.imageId._id === oriImage.imageId._id
-            else
-                return false
+            return changedImage.imageId._id === oriImage.imageId._id
+        else
+        return false
         })
-    ).map(img => {
-        if(img.imageId) return img.imageId._id;
-    });
-
+        ).map(img => {
+            if(img.imageId) return img.imageId._id;
+        });
 
     if(imagesToDelete.length > 0)
     {

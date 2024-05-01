@@ -4,7 +4,7 @@ const Image = require('../models/imageModel');
 const User = require('../models/userModel');
 const Book = require('../models/bookModel');
 // const crypto = require('crypto');
-const { getImage, deleteImage} = require('../utils/Images');
+const { getImage, deleteImages} = require('../utils/Images');
 
 
 const getCafebooks = asyncHandler(async (req, res, next) => {
@@ -26,10 +26,9 @@ const getCafebooks = asyncHandler(async (req, res, next) => {
             }
         });
     
-        await Promise.all([...imagePromises, ...bookPlaceImagePromises]);
+        await Promise.all([imagePromises, bookPlaceImagePromises]);
     }));
     
-    // Save all books after processing images
     await Promise.all(books.map(async (book) => {
         await book.save();
     }));
@@ -40,6 +39,12 @@ const getCafebooks = asyncHandler(async (req, res, next) => {
 
 const getUserbooks = asyncHandler(async (req, res, next) => {
     const id = req.params.id
+    if(req.user._id !== id)
+    {
+        res.status(403)
+        throw new Error("Forbidden")
+    }
+
     const books = await Book.find({userId:id}).populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec();
 
     await Promise.all(books.map(async (book) => {
@@ -57,21 +62,14 @@ const getUserbooks = asyncHandler(async (req, res, next) => {
             }
         });
     
-        await Promise.all([...imagePromises, ...bookPlaceImagePromises]);
+        await Promise.all([imagePromises, bookPlaceImagePromises]);
     }));
     
-    // Save all books after processing images
     await Promise.all(books.map(async (book) => {
         await book.save();
     }));
 
     res.status(200).json({ books });
-})
-
-
-const getbook = asyncHandler(async (req, res, next) => {
-
-
 })
 
 
@@ -166,7 +164,7 @@ const updateBook = asyncHandler(async (req, res, next) => {
         }
     });
 
-    await Promise.all([...imagePromises, ...bookPlaceImagePromises]);
+    await Promise.all([imagePromises, bookPlaceImagePromises]);
 
     await book.save()
 
@@ -184,30 +182,12 @@ const deleteBook =  asyncHandler(async (req, res, next) => {
         throw new Error(`No book found with this id ${id}`);
     }
 
-    console.log(book)
+    const imagePromises = deleteImages(book, 'images')
 
-    const imagePromises = book.images.map(async (image) => {
-        let bookImagePromise;
-        if (image.imageId.imageName) {
-            bookImagePromise = deleteImage(image.imageId.imageName);
-        }
-        const deletedImage = Image.findOneAndDelete({_id:image.imageId._id})
+    const bookPlaceImagePromises = deleteImages(book, 'images')
 
-        await Promise.all([deletedImage, bookImagePromise]);
 
-    });
-
-    const bookPlaceImagePromises = book.bookPlaceImages.map(async (image) => {
-        let bookImagePromise
-        if (image.imageId.imageName) {
-            bookImagePromise = deleteImage(image.imageId.imageName);
-        }
-        const deletedImage = Image.findOneAndDelete({_id:image.imageId._id})
-
-        await Promise.all([deletedImage, bookImagePromise]);
-    });
-
-    await Promise.all([...imagePromises, ...bookPlaceImagePromises]);
+    await Promise.all([imagePromises, bookPlaceImagePromises]);
 
     await Book.deleteOne({_id:book._id})
 
@@ -220,7 +200,6 @@ module.exports = {
     getCafebooks,
     getUserbooks,
     addBook,
-    getbook,
     updateBook,
     deleteBook
 }

@@ -16,7 +16,7 @@ const eventSchema = mongoose.Schema({
    cafeId:{
     type:mongoose.Schema.Types.ObjectId,
     required:[true],
-    ref:'Cafe'
+    ref:'Cafes'
    },
    userId:{
     type:mongoose.Schema.Types.ObjectId,

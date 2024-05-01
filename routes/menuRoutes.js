@@ -1,6 +1,6 @@
 const express = require('express')
 const {verifyToken} = require('../middleware/verifyToken');
-const {getCafeMenu, addMenuItem, getMenuItem, updateMenuItem, deleteMenuItem, getUserMenu} = require('../controllers/menuController');
+const {getCafeMenu, addMenuItem, updateMenuItem, deleteMenuItem, getUserMenu} = require('../controllers/menuController');
 
 const router = express.Router()
 
@@ -10,7 +10,7 @@ router.use(verifyToken);
 
 router.get('/user-menu/:id', getUserMenu)
 
-router.route('/:id').post(addMenuItem).get(getMenuItem).put(updateMenuItem).delete(deleteMenuItem)
+router.route('/:id').post(addMenuItem).put(updateMenuItem).delete(deleteMenuItem)
 
 
 

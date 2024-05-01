@@ -16,7 +16,7 @@ const menuSchema = mongoose.Schema({
     cafeId:{
         type:mongoose.Schema.Types.ObjectId,
         required:[true],
-        ref:'Cafe'
+        ref:'Cafes'
     },
     userId:{
         type:mongoose.Schema.Types.ObjectId,
@@ -32,10 +32,10 @@ const menuSchema = mongoose.Schema({
         required:false,
         enum: ['Available', 'Not Available']
     },
-    isCountable: {
-        type:Boolean,
-        required:true,
-    },
+    // isCountable: {
+    //     type:Boolean,
+    //     required:true,
+    // },
     type:{
         type:String,
         required:true

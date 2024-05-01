@@ -1,10 +1,5 @@
 const mongoose = require('mongoose')
 
-const coordinatesSchema = mongoose.Schema({
-    latitude: { type: Number, required: true },
-    longitude: { type: Number, required: true }
-});
-
 const workingDaysSchema = mongoose.Schema({
     day: {
         type: String,
@@ -73,11 +68,11 @@ const cafeSchema = mongoose.Schema({
         required:false,
         default:''
     },
-    coordinates: {
-        type: coordinatesSchema,
+    coordinates: { 
+        type: [Number],  // [longitude, latitude]
         index: '2dsphere',
         required: true
-    },    
+    },
     workingDays: [workingDaysSchema],
     averageRating: {
         type: Number,

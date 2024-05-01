@@ -14,6 +14,7 @@ const images = require('./routes/imageRoutes');
 const books = require('./routes/bookRoutes');
 const menu = require('./routes/menuRoutes');
 const events = require('./routes/eventRoutes');
+const reviews = require('./routes/reviewRoutes');
 
 connectDb();
 const app = express();
@@ -32,9 +33,10 @@ app.use('/api/v1/auth', auth);
 app.use('/api/v1/user', users);
 app.use('/api/v1/cafe', cafes);
 app.use('/api/v1/image', images);
-app.use('/api/v1/book', books);
+app.use('/api/v1/books', books);
 app.use('/api/v1/menu', menu);
-app.use('/api/v1/event', events);
+app.use('/api/v1/events', events);
+app.use('/api/v1/reviews', reviews);
 
 app.all('*', (req,res) => {
     res.status(404).json({message:`No route found with this "${req.originalUrl}" endpoint!`})

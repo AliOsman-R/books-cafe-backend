@@ -43,10 +43,8 @@ const cafeSwitch =asyncHandler( async (req, res, next) => {
         bio,
         imageId:image._id,
         phoneNumber,
-        coordinates:{
-            latitude,
-            longitude
-        },
+        coordinates: [parseFloat(longitude), parseFloat(latitude)]  // Ensure that longitude comes first in the array
+        ,
         workingDays
     })
 
@@ -64,14 +62,13 @@ const cafeSwitch =asyncHandler( async (req, res, next) => {
 
 const getUserCafe = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const user = await User.findOne({_id:id})
-    
-    if(!user)
+    if(req.user._id !== id)
     {
-        res.status(404)
-        throw new Error(`No user found with this "${id}" id`)
+        res.status(403)
+        throw new Error("Forbidden")
     }
-    const cafe = await Cafe.findOne({userId:user._id}).populate({ path: 'imageId'}).exec();
+    
+    const cafe = await Cafe.findOne({userId:id}).populate({ path: 'imageId'}).exec();
 
     if(!cafe)
     {
@@ -92,6 +89,43 @@ const getUserCafe = asyncHandler(async (req, res, next) => {
     cafe['imageId'] = cafe.imageId._id
 
     res.status(200).json({cafe})
+})
+
+
+const getNearCafes = asyncHandler(async (req, res, next) => {
+    const { latitude, longitude, maxDistance } = req.query;
+
+    const cafes = await Cafe.find({
+      coordinates: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [parseFloat(longitude), parseFloat(latitude)]
+          },
+          $maxDistance: parseInt(maxDistance) // in meters
+        }
+      }
+    }).populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
+
+    await Promise.all(cafes.map(async (cafe) => {
+        const foundUserImage  = await Image.findOne({_id:cafe.userId.imageId})
+        let cafeImagePromise, userImagePromise
+        if(cafe.imageId.imageName)
+        {
+            cafeImagePromise = getImage(cafe.imageId.imageName)
+        }
+        if(foundUserImage.imageName)
+        {
+            userImagePromise = getImage(foundUserImage.imageName)
+        }
+        const [cafeImage, userImage] = await Promise.all([cafeImagePromise, userImagePromise]);    
+
+       cafe['image'] = cafeImage || '';
+       cafe['ownerImage'] = userImage || '';
+       cafe['ownerName'] = cafe.userId.name
+    }))
+
+    res.status(200).json({cafes})
 })
 
 
@@ -170,7 +204,7 @@ const geAlltCafes = asyncHandler(async (req, res, next) => {
         }
         const [cafeImage, userImage] = await Promise.all([cafeImagePromise, userImagePromise]);    
 
-        cafe['image'] = cafeImage || '';
+       cafe['image'] = cafeImage || '';
        cafe['ownerImage'] = userImage || '';
        cafe['ownerName'] = cafe.userId.name
     }))
@@ -184,5 +218,6 @@ module.exports = {
     getUserCafe,
     updateCafe,
     geAlltCafes,
-    getCafeById
+    getCafeById,
+    getNearCafes
 }

@@ -1,6 +1,6 @@
 const express = require('express')
 const {verifyToken} = require('../middleware/verifyToken');
-const {getCafeEvents, addEvent, getEvent, updateEvent, deleteEvent, getAllEvents, getUserEvents} = require('../controllers/eventController');
+const {getCafeEvents, addEvent, updateEvent, deleteEvent, getAllEvents, getUserEvents} = require('../controllers/eventController');
 
 const router = express.Router()
 
@@ -13,7 +13,7 @@ router.use(verifyToken);
 
 router.get('/user-events/:id', getUserEvents) 
 
-router.route('/:id').post(addEvent).get(getEvent).put(updateEvent).delete(deleteEvent)
+router.route('/:id').post(addEvent).put(updateEvent).delete(deleteEvent)
 
 
 
