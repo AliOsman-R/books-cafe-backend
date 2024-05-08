@@ -52,6 +52,11 @@ const bookSchema = mongoose.Schema({
         },
         default: 0
     },
+    pendingStock:{
+        type:Number,
+        required:false,
+        default:0
+    },
     publishYear:{
         type:Number,
         required:true

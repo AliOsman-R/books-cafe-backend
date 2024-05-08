@@ -55,7 +55,6 @@ exports.deleteImage = async (imageName) => {
 }
 
 exports.fetchImages = async (input) => {
-    // Determine if the input is an array of objects or a single object
     const isMultiple = Array.isArray(input);
     const objects = isMultiple ? input : [input];
 

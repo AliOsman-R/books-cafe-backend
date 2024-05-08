@@ -6,7 +6,7 @@ const User = require('../models/userModel');
 const { getImage} = require('../utils/Images');
 
 const cafeSwitch =asyncHandler( async (req, res, next) => {
-    const {name, state, city, bio, address, phoneNumber, latitude, longitude, workingDays} = req.body;
+    const {name, state, city, bio, address, phoneNumber, latitude, longitude, orderMethods, deliveryEst, deliveryFee, workingDays} = req.body;
     const id = req.params.id
     const user = await User.findOne({_id:id})
 
@@ -43,6 +43,9 @@ const cafeSwitch =asyncHandler( async (req, res, next) => {
         bio,
         imageId:image._id,
         phoneNumber,
+        orderMethods:orderMethods,
+        deliveryEst:deliveryEst,
+        deliveryFee:deliveryFee,
         coordinates: [parseFloat(longitude), parseFloat(latitude)]  // Ensure that longitude comes first in the array
         ,
         workingDays

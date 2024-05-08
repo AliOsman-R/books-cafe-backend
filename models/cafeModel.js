@@ -78,6 +78,24 @@ const cafeSchema = mongoose.Schema({
         type: Number,
         default: 0  
     },
+    orderMethods: {
+        pickUpAtCafe: {
+            type: Boolean,
+            default: false
+        },
+        delivery: {
+            type: Boolean,
+            default: false
+        }
+    },
+    deliveryEst: {
+        type: String,
+        default: ''  
+    },
+    deliveryFee: {
+        type: Number,
+        default: 0  
+    },
     isDeleted: { type: Boolean, default: false },
 },
 {

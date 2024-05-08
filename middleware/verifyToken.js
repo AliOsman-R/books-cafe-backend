@@ -40,6 +40,9 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
                 imageId:foundUser.imageId,
             }
 
+            if(foundUser.cafeId)
+                user['cafeId'] = foundUser.cafeId
+
             const refreshToken = generateAccessToken(user)
             req.user = user
             req.refreshToken = refreshToken

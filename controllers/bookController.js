@@ -9,7 +9,8 @@ const { getImage, deleteImages} = require('../utils/Images');
 
 const getCafebooks = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const books = await Book.find({cafeId:id}).populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec();
+    const books = await Book.find({cafeId:id}).populate({path: 'images.imageId bookPlaceImages.imageId cafeId', 
+    select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
 
     await Promise.all(books.map(async (book) => {
         const imagePromises = book.images.map(async (image) => {

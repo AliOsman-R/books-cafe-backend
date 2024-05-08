@@ -61,6 +61,11 @@ const menuSchema = mongoose.Schema({
         required:false,
         default:0
     },
+    pendingStock:{
+        type:Number,
+        required:false,
+        default:0
+    },
     images:[imageSchema],
 },
 {

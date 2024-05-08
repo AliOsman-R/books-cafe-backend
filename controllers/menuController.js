@@ -9,7 +9,7 @@ const { deleteImages, fetchImages} = require('../utils/Images');
 
 const getCafeMenu = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const menu = await Menu.find({cafeId:id}).populate({path: 'images.imageId', select:'imageName'}).exec();
+    const menu = await Menu.find({cafeId:id}).populate({path: 'images.imageId cafeId', select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
 
     await fetchImages(menu)
 

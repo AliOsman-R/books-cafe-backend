@@ -174,6 +174,10 @@ const userLogin = asyncHandler(async(req,res, next) => {
         profileImage:imageUrl || '',
         imageId:foundUser.imageId._id
     }
+
+    if(foundUser.cafeId)
+        user['cafeId'] = foundUser.cafeId
+
     res.status(200).json({auth: true, user})
 })
 
