@@ -207,7 +207,8 @@ const userForgotPass = asyncHandler( async (req, res, next) => {
             <p>To reset your password please click the link below:</p>
         `
 
-    await sendEmail(email, "CafeX - Reset password", {btn:"Reset Password", url, htmlStr})
+    const endingText = ` <span>This link will expire in an hour. If you did not make this request, please disregard this email.</span>`
+    await sendEmail(email, "CafeX - Reset password", {btn:"Reset Password", url, htmlStr}, endingText)
     res.status(200).json({message:"An email sent to your email address"})
 })
 

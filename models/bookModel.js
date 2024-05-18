@@ -65,6 +65,10 @@ const bookSchema = mongoose.Schema({
         type: Number,
         default: 0  
     },
+    numOfReviews: {
+        type: Number,
+        default: 0  
+    },
     availability:{
         type:String,
         required:true,
@@ -83,6 +87,11 @@ const bookSchema = mongoose.Schema({
             message: 'isAvailable is required if the book is for reading.'
         },
         enum:['Available', 'Not Available'],
+    },
+    sold:{
+        type: Number,
+        required:false,
+        default: 0  
     },
     images:[imageSchema],
     bookPlaceImages:[imageSchema]

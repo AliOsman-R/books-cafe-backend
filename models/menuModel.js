@@ -56,6 +56,10 @@ const menuSchema = mongoose.Schema({
         type: Number,
         default: 0  
     },
+    numOfReviews: {
+        type: Number,
+        default: 0  
+    },
     stock:{
         type:Number,
         required:false,
@@ -65,6 +69,11 @@ const menuSchema = mongoose.Schema({
         type:Number,
         required:false,
         default:0
+    },
+    sold:{
+        type: Number,
+        required:false,
+        default: 0  
     },
     images:[imageSchema],
 },

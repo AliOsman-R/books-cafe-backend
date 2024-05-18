@@ -32,7 +32,7 @@ const getCafeOrders = asyncHandler(async (req, res, next) => {
 
 const getOrder = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const order = await Order.findOne({_id:id}).populate({path:'userId', select:'name email'}).exec()
+    const order = await Order.findOne({_id:id}).populate({path:'userId cafeId', select:'name email'}).exec()
 
     const newOrder = await Promise.all(order.products.map(async (orderItem) => {
         const product = await (orderItem.type === 'menu' ? Menu.findOne({_id: orderItem.productId}).populate({path: 'images.imageId', select:'imageName'}).exec()
@@ -54,8 +54,11 @@ const getOrder = asyncHandler(async (req, res, next) => {
 
 const updateOrderStatus = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const {status} = req.body
-    const order = await Order.findOne({_id:id})
+    const {status,cafeId} = req.body
+    const orderPromise =  Order.findOne({_id:id})
+    const cafePromise =  Cafe.findOne({_id:cafeId})
+
+    const [order, cafe] = await Promise.all([orderPromise, cafePromise])
 
     if(!order)
     {
@@ -81,30 +84,19 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
 
     if(status === 'confirmed')
     {
-        await Promise.all(order.products.map(async (order) => {
+        let totalSales = 0
+         await Promise.all(order.products.map(async (order) => {
             const product = await (order.type === 'menu' ? Menu.findOne({_id: order.productId}) : Book.findOne({_id: order.productId}));
             if(product)
             {
                 product.pendingStock -= parseInt(order.quantity)
+                product.sold += parseInt(order.quantity)
+                totalSales += parseInt(order.quantity)
                 return product.save()
             }
-        })) 
-
-    //     const productsHtml = cartItems.map(product => `
-    //     <div>
-    //         <h3>${product.name || product.title} - ${product.price} RM</h3>
-    //         <p>Quantity: ${product.quantity}</p>
-    //     </div>
-    // `).join('');
-
-    // const htmlStr = `
-    //         <h2>Your payment has been confirmed ${order.totalPrice} RM</h2>
-    //         <h3>Order Id: ${order.orderId}</h3>
-    //         <p>The order is pending now, once the cafe confirm it the status will be changed</p>
-    //         ${productsHtml}
-    //     `
-    //     const emailPromise = sendEmail(user.email, 'CafeX - Payment confirmation',{htmlStr,url:'',btn:"Payment confirmation"})
-    
+        }))
+        cafe.sales += totalSales
+        await cafe.save()
     }
 
     order.status = status
@@ -117,8 +109,8 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
 const updateProgressStatus =  asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const progressData = req.body
-    console.log(progressData)
-    const order = await Order.findOne({_id:id})
+    const order = await Order.findOne({_id:id}).populate({path:'userId' , select:'email'})
+    // const cafePromise =  Cafe.findOne({_id:cafeId})
 
     if(!order)
     {
@@ -127,9 +119,39 @@ const updateProgressStatus =  asyncHandler(async (req, res, next) => {
     }
 
     order.progress.push(progressData)
+
     if(progressData.activity === 'delivered')
     {
         order.status = 'completed'
+
+    //     let totalSales = 0
+    //     await Promise.all(order.products.map(async (order) => {
+    //        const product = await (order.type === 'menu' ? Menu.findOne({_id: order.productId}) : Book.findOne({_id: order.productId}));
+    //        if(product)
+    //        {
+    //            totalSales += parseInt(order.quantity)
+    //        }
+    //    }))
+    //    cafe.sales += totalSales
+        
+        const productsHtml = order.products.map(product => `
+        <div>
+        <h3>${product.item.name || product.item.title} - ${product.item.price} RM</h3>
+        <p>Quantity: ${product.quantity}</p>
+        </div>
+        `).join('');
+        
+        const htmlStr = `
+        <h2>Your oder has been delivered ${order.totalPrice} RM</h2>
+        <h3>Order Id: ${order.orderId}</h3>
+        <p>The order is completed, please dont hestiate to contact if anything went wrong.</p>
+        ${productsHtml}
+        `
+
+       await sendEmail(order.userId.email, 'CafeX - Order has been delivered',{url:'',htmlStr,btn:"Order has been delivered"},' ')
+    //    const  emailPromise = sendEmail(order.userId.email, 'CafeX - Order has been delivered',{url:'',htmlStr,btn:"Order has been delivered"},' ')
+    //    const cafePromise = cafe.save()
+    //    await Promise.all([emailPromise,cafePromise])
     }
 
     await order.save()

@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer')
 const asyncHandler = require('../middleware/tryCatch');
 
-exports.sendEmail = asyncHandler(async (email, subject, {url, htmlStr, btn}) => {
+exports.sendEmail = asyncHandler(async (email, subject, {url, htmlStr, btn}, endingText) => {
 
     const transporter = nodemailer.createTransport({
         service:process.env.SERVICE,
@@ -27,10 +27,11 @@ exports.sendEmail = asyncHandler(async (email, subject, {url, htmlStr, btn}) => 
                 ${htmlStr}
                 <a href="${url}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">${btn}</a>
                 <br/><br/>
-                <span>This link will expire in an hour. If you did not make this request, please disregard this email.</span>
+               ${endingText}
             </div>
         `,
     });
 
       console.log("Message sent: %s", info.messageId);
+      return info.messageId
 })

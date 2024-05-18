@@ -78,6 +78,14 @@ const cafeSchema = mongoose.Schema({
         type: Number,
         default: 0  
     },
+    numOfReviews: {
+        type: Number,
+        default: 0  
+    },
+    sales: {
+        type:Number,
+        delault:0
+    },
     orderMethods: {
         pickUpAtCafe: {
             type: Boolean,

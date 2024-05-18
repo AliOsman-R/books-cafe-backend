@@ -17,6 +17,7 @@ const events = require('./routes/eventRoutes');
 const reviews = require('./routes/reviewRoutes');
 const cart = require('./routes/cartRoutes');
 const order = require('./routes/orderRoutes');
+const dashboard = require('./routes/dashboardRoutes');
 
 connectDb();
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api/v1/events', events);
 app.use('/api/v1/reviews', reviews);
 app.use('/api/v1/cart', cart);
 app.use('/api/v1/orders', order);
+app.use('/api/v1/dashboard', dashboard);
 
 app.all('*', (req,res) => {
     res.status(404).json({message:`No route found with this "${req.originalUrl}" endpoint!`})

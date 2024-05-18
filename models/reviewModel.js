@@ -11,9 +11,19 @@ const reviewSchema = new mongoose.Schema({
     type:String,
     default:''
   },
-  user: {
+  productName:{
+    type:String,
+    required: false,
+    default:''
+  },
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    required: true
+  },
+  cafeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Cafes',
     required: true
   },
   reviewableId: {
@@ -23,7 +33,7 @@ const reviewSchema = new mongoose.Schema({
   reviewableType: {
     type: String,
     required: true,
-    enum: ['Cafe', 'Book', 'Menu']
+    enum: ['cafe', 'books', 'menu']
   }
 }, { timestamps: true });
 
