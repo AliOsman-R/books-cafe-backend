@@ -2,6 +2,7 @@ const asyncHandler = require('../middleware/tryCatch');
 const Cafe = require('../models/cafeModel')
 const Image = require('../models/imageModel');
 const User = require('../models/userModel');
+const Order = require('../models/orderModel');
 // const crypto = require('crypto');
 const { getImage} = require('../utils/Images');
 
@@ -71,7 +72,7 @@ const getUserCafe = asyncHandler(async (req, res, next) => {
         throw new Error("Forbidden")
     }
     
-    const cafe = await Cafe.findOne({userId:id}).populate({ path: 'imageId'}).exec();
+    const cafe = await Cafe.findOne({userId:id, isDeleted:false}).populate({ path: 'imageId'}).exec();
 
     if(!cafe)
     {
@@ -107,7 +108,8 @@ const getNearCafes = asyncHandler(async (req, res, next) => {
           },
           $maxDistance: parseInt(maxDistance) // in meters
         }
-      }
+      },
+      isDeleted:false
     }).populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
 
     await Promise.all(cafes.map(async (cafe) => {
@@ -134,7 +136,7 @@ const getNearCafes = asyncHandler(async (req, res, next) => {
 
 const getCafeById = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const cafe = await Cafe.findOne({_id:id}).populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
+    const cafe = await Cafe.findOne({_id:id, isDeleted:false}).populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
 
     if(!cafe)
     {
@@ -178,6 +180,7 @@ const updateCafe = asyncHandler(async (req, res, next) => {
         res.status(400)
         throw new Error(`The user doesnt have a cafe yet`)
     }
+
     
     const updatedCafe = await Cafe.findOneAndUpdate({_id:cafe._id}, cafeData, {new: true})
 
@@ -186,7 +189,7 @@ const updateCafe = asyncHandler(async (req, res, next) => {
 
 
 const geAlltCafes = asyncHandler(async (req, res, next) => {
-    const cafes = await Cafe.find().populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
+    const cafes = await Cafe.find({isDeleted:false}).populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
 
     if(cafes?.length === 0)
     {
@@ -207,11 +210,76 @@ const geAlltCafes = asyncHandler(async (req, res, next) => {
         }
         const [cafeImage, userImage] = await Promise.all([cafeImagePromise, userImagePromise]);    
 
-       cafe['image'] = cafeImage || '';
-       cafe['ownerImage'] = userImage || '';
-       cafe['ownerName'] = cafe.userId.name
+        cafe['image'] = cafeImage || '';
+        cafe['ownerImage'] = userImage || '';
+        cafe['ownerName'] = cafe.userId.name
     }))
     res.status(200).json({cafes})
+})
+
+
+const switchToCustomer = asyncHandler(async (req, res, next) => {
+    const id = req.params.id
+    if(req.user._id !== id)
+    {
+        res.status(403)
+        throw new Error("Forbidden")
+    }
+    
+    const cafePromise =  Cafe.findOne({userId:id})
+    const userPromise =  User.findOne({_id:id}).select('-password')
+    
+    const [cafe, user] = await Promise.all([cafePromise, userPromise])
+    
+    if(!cafe)
+    {
+        res.status(400)
+        throw new Error(`The user doesnt have a cafe yet`)
+    }
+
+    const orders =  await Order.find({cafeId:cafe._id})
+
+    orders.forEach((order) => {
+        if(order.status === 'pending'){
+            res.status(403)
+            throw new Error("Since there are some orders are pending you won't be able to switch back unless they are delivered or cancelled")
+        }
+    })
+
+    user.role = 'customer'
+    cafe.isDeleted = true
+
+    await Promise.all([user.save(), cafe.save()])
+
+    res.status(200).json({user:{role:'customer'}})
+})
+
+
+const switchToExistentCafe = asyncHandler(async (req, res, next) => {
+    const id = req.params.id
+    if(req.user._id !== id)
+    {
+        res.status(403)
+        throw new Error("Forbidden")
+    }
+    
+    const cafePromise =  Cafe.findOne({userId:id})
+    const userPromise =  User.findOne({_id:id}).select('-password')
+    
+    const [cafe, user] = await Promise.all([cafePromise, userPromise])
+    
+    if(!cafe)
+    {
+        res.status(400)
+        throw new Error(`The user doesnt have a cafe yet`)
+    }
+
+    user.role = 'owner'
+    cafe.isDeleted = false
+
+    await Promise.all([user.save(), cafe.save()])
+
+    res.status(200).json({user:{role:'owner'}})
 })
 
 
@@ -222,5 +290,7 @@ module.exports = {
     updateCafe,
     geAlltCafes,
     getCafeById,
-    getNearCafes
+    getNearCafes,
+    switchToCustomer,
+    switchToExistentCafe
 }

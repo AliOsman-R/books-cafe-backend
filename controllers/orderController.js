@@ -32,7 +32,7 @@ const getCafeOrders = asyncHandler(async (req, res, next) => {
 
 const getOrder = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const order = await Order.findOne({_id:id}).populate({path:'userId cafeId', select:'name email'}).exec()
+    const order = await Order.findOne({_id:id}).populate({path:'userId cafeId', select:'name email userId'}).exec()
 
     const newOrder = await Promise.all(order.products.map(async (orderItem) => {
         const product = await (orderItem.type === 'menu' ? Menu.findOne({_id: orderItem.productId}).populate({path: 'images.imageId', select:'imageName'}).exec()

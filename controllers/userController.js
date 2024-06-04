@@ -5,6 +5,7 @@ const { sendEmail } = require('../utils/email');
 const Cafe = require('../models/cafeModel')
 const crypto = require('crypto');
 const Token = require('../models/tokenModel');
+const { fetchImages, getImage } = require('../utils/Images');
 
 const userUpdateInfo = asyncHandler( async (req, res, next) => {
     const {email,...rest} = req.body;
@@ -85,7 +86,55 @@ const userUpdatePassword = asyncHandler(async (req, res, next) => {
     res.status(200).json({message:"Password has been updated"})
 })
 
+const getUser = asyncHandler( async(req, res, next) => {
+    const id = req.params.id
+
+    const user = await User.findOne({_id:id}).select('-password').populate({ path: 'imageId'}).exec();
+
+    if(!user){
+        res.status(404)
+        throw new Error("No user with this id")
+    }
+
+    if(user.imageId.imageName){
+        imageUrl = await getImage(user.imageId.imageName)
+        if(imageUrl)
+        {
+            user.profileImage = imageUrl
+            await user.save()
+        }
+    }
+    const toChatUser = {
+        userId:{
+            name:user.name,
+            profileImage:user.profileImage
+        }
+    }
+
+    res.status(200).json({toChatUser})
+})
 
 
-module.exports = {userUpdateInfo, userUpdatePassword}
+const getChatUsers = asyncHandler( async(req, res, next) => {
+    const id = req.params.id
+
+    const user = await User.findOne({_id:id}).select('name email chatUsers'
+        ).populate({path:'chatUsers.userId',select:'name eamil profileImage cafeId'})
+
+    if(!user){
+        res.status(404)
+        throw new Error("No user with this id")
+    }
+    console.log(user.chatUsers)
+
+    if(user.chatUsers.length === 0){
+        return res.status(200).json({chatUsers:[]})
+    }
+
+    res.status(200).json({chatUsers: user.chatUsers})
+})
+
+
+
+module.exports = {userUpdateInfo, userUpdatePassword, getChatUsers, getUser}
 

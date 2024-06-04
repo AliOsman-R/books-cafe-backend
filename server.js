@@ -18,9 +18,12 @@ const reviews = require('./routes/reviewRoutes');
 const cart = require('./routes/cartRoutes');
 const order = require('./routes/orderRoutes');
 const dashboard = require('./routes/dashboardRoutes');
+const admin = require('./routes/adminRoutes');
+const message = require('./routes/messageRoutes');
+const { app, server } = require('./sockets/socket');
 
 connectDb();
-const app = express();
+// const app = express();
 const port = process.env.PORT || 5001;
 
 app.use(cors({ credentials: true, origin: ['http://localhost:3000'] }));
@@ -43,6 +46,8 @@ app.use('/api/v1/reviews', reviews);
 app.use('/api/v1/cart', cart);
 app.use('/api/v1/orders', order);
 app.use('/api/v1/dashboard', dashboard);
+app.use('/api/v1/admin', admin);
+app.use('/api/v1/messages', message);
 
 app.all('*', (req,res) => {
     res.status(404).json({message:`No route found with this "${req.originalUrl}" endpoint!`})
@@ -51,6 +56,6 @@ app.all('*', (req,res) => {
 app.use(errorHandler);
 
 
-app.listen(port, ()=>{
+server.listen(port, ()=>{
     console.log(`server listen to port ${port}`)
 })

@@ -1,8 +1,50 @@
 const asyncHandler = require('../middleware/tryCatch');
 // const Image = require('../models/imageModel');
 const User = require('../models/userModel')
+const Admin = require('../models/adminModel')
 const jwt = require('jsonwebtoken');
 // const { getImage } = require('../utils/Images');
+
+const isAdminAuth = asyncHandler( async (req, res, next) => {
+    const token = req.headers.cookie?.split('=')[1]
+    if (!token) {
+        req.adminAuth = false
+    }
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
+        try {
+            if (error ) {
+                res.clearCookie('access_token')
+                req.adminAuth = false
+                console.log("err")
+                return next()
+            }
+
+            const decodedAdmin = decode.user
+            const foundAdmin = await Admin.findOne({userName:decodedAdmin.userName});
+
+            if (!foundAdmin) {
+                res.clearCookie('access_token')
+                req.adminAuth = false
+                return next()
+            }
+
+            const admin = {
+                userName:foundAdmin.userName
+            }
+
+            const refreshToken = generateAccessToken(admin)
+            req.admin = admin
+            req.refreshToken = refreshToken
+            req.adminAuth = true
+            next()
+        } catch (error) {
+            console.log('error: ', error);
+            return res.json({adminAuth: false})
+        }
+
+    })
+})
 
 const isUserAuth = asyncHandler( async (req, res, next) => {
     const token = req.headers.cookie?.split('=')[1]
@@ -54,7 +96,6 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
         }
 
     })
-
 })
 
 const verifyToken = asyncHandler( async (req,res,next) => {
@@ -66,9 +107,7 @@ if(!token)
 }
 
 jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
-
     try{
-        
         if(err)
         {
             res.status(401)
@@ -86,7 +125,7 @@ jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
     }
     catch (error) {
         console.log(error);
-        res.clearCookie('user-session')
+        res.clearCookie('access_token')
         return res.status(401).json({
             message: 'Unauthorized',
             data: {}
@@ -99,4 +138,4 @@ function generateAccessToken(user) {
     return jwt.sign({user}, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5h' })
 }
 
-module.exports = {verifyToken, isUserAuth, generateAccessToken};
+module.exports = {verifyToken, isUserAuth, isAdminAuth, generateAccessToken};

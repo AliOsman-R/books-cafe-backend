@@ -75,7 +75,7 @@ exports.fetchImages = async (input) => {
                 image.url = imagesUrl[index][i];
             }
         });
-        await obj.save();
+        return obj.save();
     }));
 
     // If the input was a single object, return it directly

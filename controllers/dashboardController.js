@@ -14,7 +14,7 @@ const { months } = require('../utils/constants');
 
 const getCafeDashboard = asyncHandler(async (req, res, next) => {
     const id = new mongoose.Types.ObjectId(req.params.id);
-    const orderPromise = Order.find({cafeId:id}).populate({path:'userId', select:'name'}).exec();
+    const orderPromise = Order.find({cafeId:id}).populate({path:'userId', select:'email name phoneNumber'}).exec();
     const menuPromise = Menu.find({cafeId:id})
     const booksPromise = Book.find({cafeId:id})
     const eventsPromise = Event.find({cafeId:id})
@@ -31,6 +31,7 @@ const getCafeDashboard = asyncHandler(async (req, res, next) => {
     const totalBooks = books.length
     const totalMenuItems = menu.length
     const totalSales = cafe.sales;
+    console.log(orders)
 
     const totalSalesThisMonthResultPromise = Order.aggregate([
         { $match: {cafeId:id, status: 'completed', createdAt: { $gte: startOfMonth } } },
@@ -87,7 +88,7 @@ const getCafeDashboard = asyncHandler(async (req, res, next) => {
                 }
             },
             { $unwind: "$user" },
-            { $project: { _id: 1, orderCount: 1, 'user.name': 1 } }
+            { $project: { _id: 1, orderCount: 1, 'user.name': 1, 'user.email': 1, 'user.phoneNumber': 1 } }
           ]);
 
     const [totalSalesThisMonthResult, totalRevenueResult, totalRevenueThisMonthResult, monthlyRevenue, top3Items,topUsers] = await Promise.all(

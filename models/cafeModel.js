@@ -13,10 +13,10 @@ const workingDaysSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    isOpen: {
-        type: Boolean,
-        required: true
-    }
+    // isOpen: {
+    //     type: Boolean,
+    //     required: true
+    // }
 });
 
 const cafeSchema = mongoose.Schema({
