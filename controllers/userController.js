@@ -3,6 +3,13 @@ const asyncHandler = require('../middleware/tryCatch');
 const bcrypt = require('bcrypt')
 const { sendEmail } = require('../utils/email');
 const Cafe = require('../models/cafeModel')
+const Book = require('../models/bookModel')
+const Review = require('../models/reviewModel')
+const Menu = require('../models/menuModel')
+const Event = require('../models/eventModel')
+const Cart = require('../models/cartModel')
+const Image = require('../models/imageModel')
+const Order = require('../models/orderModel')
 const crypto = require('crypto');
 const Token = require('../models/tokenModel');
 const { fetchImages, getImage } = require('../utils/Images');
@@ -125,16 +132,70 @@ const getChatUsers = asyncHandler( async(req, res, next) => {
         res.status(404)
         throw new Error("No user with this id")
     }
-    console.log(user.chatUsers)
 
     if(user.chatUsers.length === 0){
         return res.status(200).json({chatUsers:[]})
     }
 
-    res.status(200).json({chatUsers: user.chatUsers})
+    const chatUsers = user?.chatUsers?.filter((chatUser => chatUser.userId))
+
+    res.status(200).json({chatUsers})
+})
+
+
+const deleteAccount = asyncHandler( async(req, res, next) => {
+    const id = req.params.id;
+
+    const cafePromise = Cafe.findOne({ userId: id });
+    const userPromise = User.findById(id);
+    const ordersPromise = Order.find({ userId: id });
+
+    const [cafe, user, orders] = await Promise.all([cafePromise, userPromise, ordersPromise]);
+
+    if(!user || ! user._id.equals(req.user._id))
+    {
+        res.status(403)
+        throw new Error(`Permission forbidden or no user found with this id "${req.params.id}"`)
+    }
+
+    for (const order of orders) {
+        if (order.status === 'pending' || order.status === 'confirmed') {
+            res.status(403);
+            throw new Error("You can't delete the user as there are pending or confirmed orders. They must be delivered or cancelled first.");
+        }
+    }
+
+    if (cafe) {
+        const cafeOrders = await Order.find({ cafeId: cafe._id });
+        
+        for (const order of cafeOrders) {
+            if (order.status === 'pending' || order.status === 'confirmed') {
+                res.status(403);
+                throw new Error("You can't delete the user as there are pending or confirmed orders in the cafe. They must be delivered or cancelled first.");
+            }
+        }
+
+        await Promise.all([
+            Cafe.deleteOne({ userId: id }),
+            Book.deleteMany({ cafeId: cafe._id }),
+            Menu.deleteMany({ cafeId: cafe._id }),
+            Event.deleteMany({ cafeId: cafe._id }),
+            Order.deleteMany({ cafeId: cafe._id }),
+        ]);
+    }
+
+    await Promise.all([
+        Cart.deleteMany({ userId: id }),
+        Review.deleteMany({ userId: id }),
+        Image.deleteOne({ _id: user.imageId }),
+        Order.deleteMany({ userId: id }),
+        User.deleteOne({_id:user._id})
+    ]);
+
+    res.status(200).json({ message: 'User and all associated data deleted' });
 })
 
 
 
-module.exports = {userUpdateInfo, userUpdatePassword, getChatUsers, getUser}
+module.exports = {userUpdateInfo, userUpdatePassword, getChatUsers, getUser, deleteAccount}
 

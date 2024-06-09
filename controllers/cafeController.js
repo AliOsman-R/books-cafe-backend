@@ -240,9 +240,9 @@ const switchToCustomer = asyncHandler(async (req, res, next) => {
     const orders =  await Order.find({cafeId:cafe._id})
 
     orders.forEach((order) => {
-        if(order.status === 'pending'){
+        if(order.status === 'pending' || order.status === 'confirmed'){
             res.status(403)
-            throw new Error("Since there are some orders are pending you won't be able to switch back unless they are delivered or cancelled")
+            throw new Error("Since there are some orders are pending or confirmed you won't be able to switch back unless they are delivered or cancelled")
         }
     })
 
