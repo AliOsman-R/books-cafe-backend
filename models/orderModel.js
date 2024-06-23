@@ -28,6 +28,17 @@ const progressSchema = mongoose.Schema({
     },
 })
 
+const customerScheam = mongoose.Schema({
+    name:{
+        type:String,
+        required:true,
+    },
+    email:{
+        type:String,
+        required:true,
+    }
+})
+
 const productSchema = mongoose.Schema({
     productId:{
         type:mongoose.Schema.Types.ObjectId,
@@ -68,6 +79,7 @@ const orderSchema = mongoose.Schema({
         required:[true],
         ref:'User'
     },
+    customerDetails:customerScheam,
     products:[productSchema],
     status:{
         type:String,

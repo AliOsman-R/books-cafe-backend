@@ -1,7 +1,7 @@
 const User = require('../models/userModel')
 const asyncHandler = require('../middleware/tryCatch');
 const bcrypt = require('bcrypt')
-const { sendEmail } = require('../utils/email');
+const { generateVerifyEmail } = require('../utils/email');
 const Cafe = require('../models/cafeModel')
 const Book = require('../models/bookModel')
 const Review = require('../models/reviewModel')
@@ -10,9 +10,7 @@ const Event = require('../models/eventModel')
 const Cart = require('../models/cartModel')
 const Image = require('../models/imageModel')
 const Order = require('../models/orderModel')
-const crypto = require('crypto');
-const Token = require('../models/tokenModel');
-const { fetchImages, getImage } = require('../utils/Images');
+const { getImage } = require('../utils/Images');
 
 const userUpdateInfo = asyncHandler( async (req, res, next) => {
     const {email,...rest} = req.body;
@@ -27,19 +25,7 @@ const userUpdateInfo = asyncHandler( async (req, res, next) => {
     
     if(email)
     {
-        const token = await Token.create({
-            userId:user._id,
-            token:crypto.randomBytes(32).toString("hex"),
-            type:"email"
-        })    
-        const url = `${process.env.BASE_URL}/email/${user._id}/verify/${token.token}`
-        const htmlStr = `
-        <h2>Verify your email address</h2>
-        <p>To continue setting up your CafeX account,</p>
-        <p>Please verify that this is your email address by clicking the link below:</p>
-        `
-        await sendEmail(email, 'CafeX - Verify your email',{htmlStr,url,btn:"Verify email address"})
-        console.log("image6")
+        await generateVerifyEmail(user)
         emailMessage='An email sent to your email address please verify it to use the new email'
         data['newEmail'] = email;
     }
@@ -67,7 +53,6 @@ const userUpdateInfo = asyncHandler( async (req, res, next) => {
 
     res.status(200).json({message:`information has been updated, ${emailMessage} `,user:updatedUser})
 })
-
 
 const userUpdatePassword = asyncHandler(async (req, res, next) => {
     const {pass,oldPass} = req.body;
@@ -121,7 +106,6 @@ const getUser = asyncHandler( async(req, res, next) => {
     res.status(200).json({toChatUser})
 })
 
-
 const getChatUsers = asyncHandler( async(req, res, next) => {
     const id = req.params.id
 
@@ -142,7 +126,6 @@ const getChatUsers = asyncHandler( async(req, res, next) => {
     res.status(200).json({chatUsers})
 })
 
-
 const deleteAccount = asyncHandler( async(req, res, next) => {
     const id = req.params.id;
 
@@ -161,7 +144,7 @@ const deleteAccount = asyncHandler( async(req, res, next) => {
     for (const order of orders) {
         if (order.status === 'pending' || order.status === 'confirmed') {
             res.status(403);
-            throw new Error("You can't delete the user as there are pending or confirmed orders. They must be delivered or cancelled first.");
+            throw new Error("You can't delete the account as there are pending or confirmed orders. They must be delivered or cancelled first.");
         }
     }
 
@@ -171,7 +154,7 @@ const deleteAccount = asyncHandler( async(req, res, next) => {
         for (const order of cafeOrders) {
             if (order.status === 'pending' || order.status === 'confirmed') {
                 res.status(403);
-                throw new Error("You can't delete the user as there are pending or confirmed orders in the cafe. They must be delivered or cancelled first.");
+                throw new Error("You can't delete the account as there are pending or confirmed orders in the cafe. They must be delivered or cancelled first.");
             }
         }
 
@@ -180,21 +163,22 @@ const deleteAccount = asyncHandler( async(req, res, next) => {
             Book.deleteMany({ cafeId: cafe._id }),
             Menu.deleteMany({ cafeId: cafe._id }),
             Event.deleteMany({ cafeId: cafe._id }),
-            Order.deleteMany({ cafeId: cafe._id }),
+            // Order.deleteMany({ cafeId: cafe._id }),
         ]);
     }
 
+
+
     await Promise.all([
         Cart.deleteMany({ userId: id }),
-        Review.deleteMany({ userId: id }),
+        // Review.deleteMany({ userId: id }),
         Image.deleteOne({ _id: user.imageId }),
-        Order.deleteMany({ userId: id }),
+        // Order.deleteMany({ userId: id, sta }),
         User.deleteOne({_id:user._id})
     ]);
 
     res.status(200).json({ message: 'User and all associated data deleted' });
 })
-
 
 
 module.exports = {userUpdateInfo, userUpdatePassword, getChatUsers, getUser, deleteAccount}

@@ -1,9 +1,7 @@
 const asyncHandler = require('../middleware/tryCatch');
-// const Image = require('../models/imageModel');
 const User = require('../models/userModel')
 const Admin = require('../models/adminModel')
 const jwt = require('jsonwebtoken');
-// const { getImage } = require('../utils/Images');
 
 const isAdminAuth = asyncHandler( async (req, res, next) => {
     const token = req.headers.cookie?.split('=')[1]

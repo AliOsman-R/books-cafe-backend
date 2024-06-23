@@ -1,41 +1,34 @@
 const asyncHandler = require('../middleware/tryCatch');
-const mongoose = require('mongoose');
-const Image = require('../models/imageModel');
-const User = require('../models/userModel');
 const Menu = require('../models/menuModel');
 const Book = require('../models/bookModel');
 const Order = require('../models/orderModel');
 const Cafe = require('../models/cafeModel');
-const { deleteImages, fetchImages} = require('../utils/Images');
-const { sendEmail } = require('../utils/email');
+const { fetchImages} = require('../utils/Images');
+const { sendEmail, generateOrderDeliveredEmail } = require('../utils/email');
 
 
 const getUserOrders = asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const orders = await Order.find({userId:id})
 
-    // await fetchImages(orders)
-
     res.status(200).json({ orders });
 })
-
 
 const getCafeOrders = asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const orders = await Order.find({cafeId:id})
 
-    // await fetchImages(orders)
-
     res.status(200).json({ orders });
 })
 
-
 const getOrder = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const order = await Order.findOne({_id:id}).populate({path:'userId cafeId', select:'name email userId'}).exec()
+    const order = await Order.findOne({_id:id})
+    .populate({path:'userId cafeId', select:'name email userId'}).exec()
 
     const newOrder = await Promise.all(order.products.map(async (orderItem) => {
-        const product = await (orderItem.type === 'menu' ? Menu.findOne({_id: orderItem.productId}).populate({path: 'images.imageId', select:'imageName'}).exec()
+        const product = await (orderItem.type === 'menu' ? 
+         Menu.findOne({_id: orderItem.productId}).populate({path: 'images.imageId', select:'imageName'}).exec()
          : Book.findOne({_id: orderItem.productId}).populate({path: 'images.imageId', select:'imageName'}).exec())
 
          if(product)
@@ -44,13 +37,12 @@ const getOrder = asyncHandler(async (req, res, next) => {
 
     let products = []
     order.products.map((orderItem) => {
-        const foundOrder = newOrder.find((item) => item._id.equals(orderItem.productId) )
+        const foundOrder = newOrder.find((item) => item?._id.equals(orderItem.productId) )
         products.push({...orderItem._doc, item:foundOrder?foundOrder:orderItem.item})
     })
 
     res.status(200).json({ order:{...order._doc, products} });
 })
-
 
 const updateOrderStatus = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -69,7 +61,8 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     if(status === 'cancelled')
     {
         await Promise.all(order.products.map(async (order) => {
-            const product = await (order.type === 'menu' ? Menu.findOne({_id: order.productId}) : Book.findOne({_id: order.productId}));
+            const product = await (order.type === 'menu' ?
+             Menu.findOne({_id: order.productId}) : Book.findOne({_id: order.productId}));
             if(product)
             {
                 product.stock += parseInt(order.quantity)
@@ -95,7 +88,7 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
                 return product.save()
             }
         }))
-        cafe.sales += totalSales
+        cafe.sales += parseInt(totalSales)
         await cafe.save()
     }
 
@@ -105,12 +98,10 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     res.status(200).json({ order });
 })
 
-
 const updateProgressStatus =  asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const progressData = req.body
-    const order = await Order.findOne({_id:id}).populate({path:'userId' , select:'email'})
-    // const cafePromise =  Cafe.findOne({_id:cafeId})
+    const order = await Order.findOne({_id:id}).populate({path:'userId' , select:'email name'})
 
     if(!order)
     {
@@ -123,53 +114,21 @@ const updateProgressStatus =  asyncHandler(async (req, res, next) => {
     if(progressData.activity === 'delivered')
     {
         order.status = 'completed'
-
-    //     let totalSales = 0
-    //     await Promise.all(order.products.map(async (order) => {
-    //        const product = await (order.type === 'menu' ? Menu.findOne({_id: order.productId}) : Book.findOne({_id: order.productId}));
-    //        if(product)
-    //        {
-    //            totalSales += parseInt(order.quantity)
-    //        }
-    //    }))
-    //    cafe.sales += totalSales
         
-        const productsHtml = order.products.map(product => `
-        <div>
-        <h3>${product.item.name || product.item.title} - ${product.item.price} RM</h3>
-        <p>Quantity: ${product.quantity}</p>
-        </div>
-        `).join('');
-        
-        const htmlStr = `
-        <h2>Your oder has been delivered ${order.totalPrice} RM</h2>
-        <h3>Order Id: ${order.orderId}</h3>
-        <p>The order is completed, please dont hestiate to contact if anything went wrong.</p>
-        ${productsHtml}
-        `
+        const html = generateOrderDeliveredEmail(order, order.userId)
 
-       await sendEmail(order.userId.email, 'CafeX - Order has been delivered',{url:'',htmlStr,btn:"Order has been delivered"},' ')
-    //    const  emailPromise = sendEmail(order.userId.email, 'CafeX - Order has been delivered',{url:'',htmlStr,btn:"Order has been delivered"},' ')
-    //    const cafePromise = cafe.save()
-    //    await Promise.all([emailPromise,cafePromise])
+       await sendEmail(order.userId.email, 'CafeX - Order has been delivered', html)
     }
 
     await order.save()
 
     res.status(200).json({progressData, order})
-
-})
-
-
-const deleteOrder = asyncHandler(async (req, res, next) => {
-
 })
 
 
 module.exports = {
     getUserOrders,
     updateOrderStatus,
-    deleteOrder,
     getCafeOrders,
     getOrder,
     updateProgressStatus

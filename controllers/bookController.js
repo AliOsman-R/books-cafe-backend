@@ -1,33 +1,18 @@
 const asyncHandler = require('../middleware/tryCatch');
 const mongoose = require('mongoose');
-const Image = require('../models/imageModel');
 const User = require('../models/userModel');
 const Book = require('../models/bookModel');
-// const crypto = require('crypto');
-const { getImage, deleteImages} = require('../utils/Images');
-
+const { deleteImages} = require('../utils/Images');
+const { getBooksImages } = require('../utils/bookUtils');
 
 const getCafebooks = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const books = await Book.find({cafeId:id}).populate({path: 'images.imageId bookPlaceImages.imageId cafeId', 
+    const books = await Book.find({cafeId:id})
+    .populate({path: 'images.imageId bookPlaceImages.imageId cafeId', 
     select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
 
     await Promise.all(books.map(async (book) => {
-        const imagePromises = book.images.map(async (image) => {
-            if (image.imageId.imageName) {
-                const bookImage = await getImage(image.imageId.imageName);
-                image.url = bookImage;
-            }
-        });
-    
-        const bookPlaceImagePromises = book.bookPlaceImages.map(async (image) => {
-            if (image.imageId.imageName) {
-                const bookImage = await getImage(image.imageId.imageName);
-                image.url = bookImage;
-            }
-        });
-    
-        await Promise.all([imagePromises, bookPlaceImagePromises]);
+        await getBooksImages(book)
     }));
     
     await Promise.all(books.map(async (book) => {
@@ -37,33 +22,20 @@ const getCafebooks = asyncHandler(async (req, res, next) => {
     res.status(200).json({ books });
 })
 
-
 const getUserbooks = asyncHandler(async (req, res, next) => {
     const id = req.params.id
+    
     if(req.user._id !== id)
     {
         res.status(403)
         throw new Error("Forbidden")
     }
 
-    const books = await Book.find({userId:id}).populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec();
+    const books = await Book.find({userId:id})
+    .populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec();
 
     await Promise.all(books.map(async (book) => {
-        const imagePromises = book.images.map(async (image) => {
-            if (image.imageId.imageName) {
-                const bookImage = await getImage(image.imageId.imageName);
-                image.url = bookImage;
-            }
-        });
-    
-        const bookPlaceImagePromises = book.bookPlaceImages.map(async (image) => {
-            if (image.imageId.imageName) {
-                const bookImage = await getImage(image.imageId.imageName);
-                image.url = bookImage;
-            }
-        });
-    
-        await Promise.all([imagePromises, bookPlaceImagePromises]);
+        await getBooksImages(book)
     }));
     
     await Promise.all(books.map(async (book) => {
@@ -72,7 +44,6 @@ const getUserbooks = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({ books });
 })
-
 
 const addBook = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -97,29 +68,15 @@ const addBook = asyncHandler(async (req, res, next) => {
         userId:user._id,
         cafeId:user.cafeId._id})
 
-    const book = await Book.findOne({_id:createdBook._id}).populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec();
+    const book = await Book.findOne({_id:createdBook._id})
+    .populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec();
 
-    const imagePromises = book.images.map(async (image) => {
-        if (image.imageId.imageName) {
-            const bookImage = await getImage(image.imageId.imageName);
-            image.url = bookImage;
-        }
-    });
-
-    const bookPlaceImagePromises = book.bookPlaceImages.map(async (image) => {
-        if (image.imageId.imageName) {
-            const bookImage = await getImage(image.imageId.imageName);
-            image.url = bookImage;
-        }
-    });
-
-    await Promise.all([...imagePromises, ...bookPlaceImagePromises]);
+    await getBooksImages(book)
 
     await book.save()    
     
     res.status(201).json({ message: 'Book added successfully', book });
 })
-
 
 const updateBook = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -149,33 +106,21 @@ const updateBook = asyncHandler(async (req, res, next) => {
         throw new Error(`No book found with this id ${id}`);
     }
 
-    const book = await Book.findOne({_id:updatedBook._id}).populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec()
+    const book = await Book.findOne({_id:updatedBook._id})
+    .populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec()
     
-    const imagePromises = book.images.map(async (image) => {
-        if (image.imageId.imageName) {
-            const bookImage = await getImage(image.imageId.imageName);
-            image.url = bookImage;
-        }
-    });
-
-    const bookPlaceImagePromises = book.bookPlaceImages.map(async (image) => {
-        if (image.imageId.imageName) {
-            const bookImage = await getImage(image.imageId.imageName);
-            image.url = bookImage;
-        }
-    });
-
-    await Promise.all([imagePromises, bookPlaceImagePromises]);
+    
+    await getBooksImages(book)
 
     await book.save()
 
     res.status(200).json({ message: 'Book updated successfully', book });
 })
 
-
 const deleteBook =  asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const book = await Book.findOne({_id:id}).populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec();
+    const book = await Book.findOne({_id:id})
+    .populate({path: 'images.imageId bookPlaceImages.imageId', select:'imageName'}).exec();
 
     if(!book)
     {
@@ -185,8 +130,7 @@ const deleteBook =  asyncHandler(async (req, res, next) => {
 
     const imagePromises = deleteImages(book, 'images')
 
-    const bookPlaceImagePromises = deleteImages(book, 'images')
-
+    const bookPlaceImagePromises = deleteImages(book, 'bookPlaceImages')
 
     await Promise.all([imagePromises, bookPlaceImagePromises]);
 

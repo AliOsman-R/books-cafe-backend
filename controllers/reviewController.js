@@ -1,14 +1,8 @@
 const asyncHandler = require('../middleware/tryCatch');
-const mongoose = require('mongoose');
-const Image = require('../models/imageModel');
-const User = require('../models/userModel');
 const Review = require('../models/reviewModel');
-const Order = require('../models/orderModel');
 const Cafe = require('../models/cafeModel');
 const Menu = require('../models/menuModel');
 const Book = require('../models/bookModel');
-// const crypto = require('crypto');
-const { getImage, deleteImage} = require('../utils/Images');
 
 
 const getReviews = asyncHandler(async (req, res, next) => {
@@ -18,7 +12,6 @@ const getReviews = asyncHandler(async (req, res, next) => {
     res.status(200).json({reviews})
 })
 
-
 const getUserReviews = asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const reviews = await Review.find({userId:id}).populate({path:"userId", select:"name"}).exec();
@@ -26,14 +19,12 @@ const getUserReviews = asyncHandler(async (req, res, next) => {
     res.status(200).json({reviews})
 })
 
-
 const getCafeReviews = asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const reviews = await Review.find({cafeId:id}).populate({path:"userId", select:"name"}).exec();
 
     res.status(200).json({reviews})
 })
-
 
 const postReview = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -80,7 +71,6 @@ const postReview = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({message: 'Review has been recorded successfully', review})
 })
-
 
 const updateReview = asyncHandler(async (req, res, next) => {
     const id = req.params.id

@@ -1,21 +1,19 @@
 const asyncHandler = require('../middleware/tryCatch');
 const mongoose = require('mongoose');
-const Image = require('../models/imageModel');
 const User = require('../models/userModel');
 const Menu = require('../models/menuModel');
-// const crypto = require('crypto');
 const { deleteImages, fetchImages} = require('../utils/Images');
 
 
 const getCafeMenu = asyncHandler(async (req, res, next) => {
     const id = req.params.id
-    const menu = await Menu.find({cafeId:id}).populate({path: 'images.imageId cafeId', select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
+    const menu = await Menu.find({cafeId:id})
+    .populate({path: 'images.imageId cafeId', select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
 
     await fetchImages(menu)
 
     res.status(200).json({ menu });
 })
-
 
 const getUserMenu = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -25,13 +23,13 @@ const getUserMenu = asyncHandler(async (req, res, next) => {
         throw new Error("Forbidden")
     }
     
-    const menu = await Menu.find({userId:id}).populate({path: 'images.imageId', select:'imageName'}).exec();
+    const menu = await Menu.find({userId:id})
+    .populate({path: 'images.imageId', select:'imageName'}).exec();
 
     await fetchImages(menu)
 
     res.status(200).json({ menu });
 })
-
 
 const addMenuItem = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -57,11 +55,9 @@ const addMenuItem = asyncHandler(async (req, res, next) => {
     const menuItem = await createdMenuItem.populate({path: 'images.imageId', select:'imageName'})
 
     await fetchImages(menuItem)
-      
     
     res.status(201).json({ message: 'Menu item added successfully', menuItem });
 })
-
 
 const updateMenuItem = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -90,7 +86,6 @@ const updateMenuItem = asyncHandler(async (req, res, next) => {
     res.status(200).json({ message: 'Menu updated successfully', menuItem });
 })
 
-
 const deleteMenuItem =  asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const menuItem = await Menu.findOne({_id:id}).populate({path: 'images.imageId', select:'imageName'}).exec();
@@ -106,7 +101,6 @@ const deleteMenuItem =  asyncHandler(async (req, res, next) => {
     await Menu.deleteOne({_id:menuItem._id})
 
     res.status(200).json({ message: 'Menu item deleted successfully' });
-
 })
 
 

@@ -4,7 +4,6 @@ const {getCafeEvents, addEvent, updateEvent, deleteEvent, getAllEvents, getUserE
 
 const router = express.Router()
 
-
 router.get('/all-events/', getAllEvents)
 
 router.get('/cafe-events/:id', getCafeEvents) 

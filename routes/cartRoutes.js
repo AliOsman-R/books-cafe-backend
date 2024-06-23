@@ -6,7 +6,6 @@ const router = express.Router()
 
 router.use(verifyToken);
 
-
 router.route('/:id').post(addToCart).put(updateCartItem).delete(deleteCartItem).get(getUserCart)
 
 router.delete('/clear/:id', clearCart)

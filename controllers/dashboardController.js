@@ -1,15 +1,10 @@
 const asyncHandler = require('../middleware/tryCatch');
 const mongoose = require('mongoose');
-const Image = require('../models/imageModel');
-const User = require('../models/userModel');
-const Review = require('../models/reviewModel');
 const Order = require('../models/orderModel');
 const Cafe = require('../models/cafeModel');
 const Menu = require('../models/menuModel');
 const Book = require('../models/bookModel');
 const Event = require('../models/eventModel');
-// const crypto = require('crypto');
-const { getImage, deleteImage} = require('../utils/Images');
 const { months } = require('../utils/constants');
 
 const getCafeDashboard = asyncHandler(async (req, res, next) => {
@@ -31,7 +26,6 @@ const getCafeDashboard = asyncHandler(async (req, res, next) => {
     const totalBooks = books.length
     const totalMenuItems = menu.length
     const totalSales = cafe.sales;
-    console.log(orders)
 
     const totalSalesThisMonthResultPromise = Order.aggregate([
         { $match: {cafeId:id, status: 'completed', createdAt: { $gte: startOfMonth } } },
@@ -67,7 +61,7 @@ const getCafeDashboard = asyncHandler(async (req, res, next) => {
             _id: {
             $ifNull: ['$products.item.title', '$products.item.name']  
             },
-            value: { $sum: '$products.quantity' },  // Summing up all quantities sold for this item
+            value: { $sum: '$products.quantity' },
             label: { $first: { $ifNull: ['$products.item.title', '$products.item.name'] } }  
         }},
         { $sort: { value: -1 } },  
@@ -132,10 +126,7 @@ const getCafeDashboard = asyncHandler(async (req, res, next) => {
     }
 
     res.status(200).json({message:'ok', dashbaord})
-
 })
-
-
 
 
 module.exports = {

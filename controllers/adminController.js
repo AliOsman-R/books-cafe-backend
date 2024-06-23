@@ -123,15 +123,15 @@ const deleteUser = asyncHandler( async (req, res, next) => {
             Book.deleteMany({ cafeId: cafe._id }),
             Menu.deleteMany({ cafeId: cafe._id }),
             Event.deleteMany({ cafeId: cafe._id }),
-            Order.deleteMany({ cafeId: cafe._id }),
+            // Order.deleteMany({ cafeId: cafe._id }),
         ]);
     }
 
     await Promise.all([
         Cart.deleteMany({ userId: id }),
-        Review.deleteMany({ userId: id }),
+        // Review.deleteMany({ userId: id }),
         Image.deleteOne({ _id: user.imageId }),
-        Order.deleteMany({ userId: id }),
+        // Order.deleteMany({ userId: id }),
         User.deleteOne({_id:user._id})
     ]);
 

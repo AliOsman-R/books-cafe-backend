@@ -1,13 +1,12 @@
 const express = require('express')
 const {verifyToken} = require('../middleware/verifyToken');
-const { getUserOrders, updateOrderStatus, deleteOrder, getCafeOrders, getOrder, updateProgressStatus} = require('../controllers/orderController');
+const { getUserOrders, updateOrderStatus, getCafeOrders, getOrder, updateProgressStatus} = require('../controllers/orderController');
 
 const router = express.Router()
 
 router.use(verifyToken);
 
-
-router.route('/:id').get(getOrder).delete(deleteOrder)
+router.route('/:id').get(getOrder)
 
 router.get('/user-orders/:id', getUserOrders)
 

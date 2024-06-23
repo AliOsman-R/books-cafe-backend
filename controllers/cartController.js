@@ -1,15 +1,12 @@
 const asyncHandler = require('../middleware/tryCatch');
-const mongoose = require('mongoose');
-const Image = require('../models/imageModel');
-const User = require('../models/userModel');
 const Menu = require('../models/menuModel');
 const Book = require('../models/bookModel');
 const Order = require('../models/orderModel');
 const Cart = require('../models/cartModel');
 const { fetchImages} = require('../utils/Images');
-const { generateOrderNumber } = require('../utils/functions');
-const { sendEmail } = require('../utils/email');
-const { getProductOrError } = require('../utils/functions');
+const { generateOrderNumber } = require('../utils/orderUtils');
+const { sendEmail, generatePaymentEmail } = require('../utils/email');
+const { getProductOrError } = require('../utils/orderUtils');
 
 
 const addToCart = asyncHandler(async (req, res, next) => {
@@ -34,7 +31,6 @@ const addToCart = asyncHandler(async (req, res, next) => {
     res.status(200).json({message:"added to the cart successfully", cartItem });
 })
 
-
 const updateCartItem = asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const {quantity} = req.body
@@ -42,11 +38,10 @@ const updateCartItem = asyncHandler(async (req, res, next) => {
         res.status(400)
         throw new Error('Quantity not provided')
     }
-    const cartItem = await Cart.findOneAndUpdate({productId:id}, { $set: { quantity } }, { new: true })
+    await Cart.findOneAndUpdate({productId:id}, { $set: { quantity } }, { new: true })
 
     res.status(200).json({ message:'Product has been updated successfully' });
 })
-
 
 const deleteCartItem = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -61,7 +56,6 @@ const deleteCartItem = asyncHandler(async (req, res, next) => {
     res.status(200).json({ message:'Product has been deleted successfully' });
 })
 
-
 const clearCart = asyncHandler(async (req, res, next) => {
     const id = req.params.id
     await Cart.deleteMany({userId:id})
@@ -69,21 +63,25 @@ const clearCart = asyncHandler(async (req, res, next) => {
     res.status(200).json({ message:'Products has been deleted successfully' });
 })
 
-
 const placeOrder = asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const {cartItems, user,...rest} = req.body
     const products = []
 
-    await Promise.all(cartItems.map(async (cartItem) => {
-        const product = await (cartItem.name ? Menu.findOne({_id: cartItem._id}) : Book.findOne({_id: cartItem._id}));
+    const productPromises = cartItems.map(cartItem => (
+        cartItem.name ? Menu.findOne({ _id: cartItem._id }) : Book.findOne({ _id: cartItem._id })
+    ));
+    const productResults = await Promise.all(productPromises);
+
+    for (let i = 0; i < cartItems.length; i++) {
+        const cartItem = cartItems[i];
+        const product = productResults[i];
         res.status(404)
-        return getProductOrError(product, cartItem);
-    }))
+        getProductOrError(product, cartItem);
+    }
 
-
-    await Promise.all(cartItems.map(async (cartItem) => {
-        const product = await (cartItem.name ? Menu.findOne({_id: cartItem._id}) : Book.findOne({_id: cartItem._id}));
+    await Promise.all(cartItems.map(async (cartItem, index) => {
+        const product = productResults[index];
         const item = {
             productId:cartItem._id,
             quantity:cartItem.quantity,
@@ -114,7 +112,11 @@ const placeOrder = asyncHandler(async (req, res, next) => {
             time:formattedTime,
             date:formattedDate
         },
-        userId:id
+        userId:id,
+        customerDetails:{
+            name:user.name,
+            email:user.email
+        }
     })
 
     
@@ -123,35 +125,28 @@ const placeOrder = asyncHandler(async (req, res, next) => {
         res.status(400)
         throw new Error(`Something went wrong please try again later`)
     }
-    // const productsHtml = cartItems.map(product => `
-    //     <div>
-    //         <h3>${product.name || product.title} - ${product.price} RM</h3>
-    //         <p>Quantity: ${product.quantity}</p>
-    //     </div>
-    // `).join('');
 
-    // const htmlStr = `
-    //         <h2>Your payment has been confirmed ${order.totalPrice} RM</h2>
-    //         <h3>Order Id: ${order.orderId}</h3>
-    //         <p>The order is pending now, once the cafe confirm it the status will be changed</p>
-    //         ${productsHtml}
-    //     `
-    // const emailPromise = sendEmail(user.email, 'CafeX - Payment confirmation',{htmlStr,url:'',btn:"Payment confirmation"})
+    const html = generatePaymentEmail(order, user)
+
+    const emailPromise = sendEmail(user.email, 'CafeX - Payment Confirmation', html)
     
-    const deletePromise = await Cart.deleteMany({userId:id})
-    // await Promise.all([emailPromise, deletePromise])
+    const deletePromise = Cart.deleteMany({userId:id})
+    
+    await Promise.all([emailPromise, deletePromise])
 
     res.status(200).json({message:"Payment is successful"})
 })
 
-
 const getUserCart = asyncHandler(async (req, res, next) => {
     const id = req.params.id
     const cart = await Cart.find({userId:id})
+
     const cartPromise = cart.map(async (cartItem) => {
         if(cartItem.type === 'menu')
         {
-            const menu =await Menu.findOne({_id:cartItem.productId}).populate({path: 'images.imageId cafeId', select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
+            const menu =await Menu.findOne({_id:cartItem.productId})
+            .populate({path: 'images.imageId cafeId', select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
+
             if(menu)
             {
                return fetchImages(menu)
@@ -159,7 +154,9 @@ const getUserCart = asyncHandler(async (req, res, next) => {
         }
         else
         {
-            const book = await Book.findOne({_id:cartItem.productId}).populate({path: 'images.imageId cafeId', select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
+            const book = await Book.findOne({_id:cartItem.productId})
+            .populate({path: 'images.imageId cafeId', select:'imageName orderMethods deliveryFee deliveryEst'}).exec();
+
             if(book)
             {
               return fetchImages(book)
@@ -167,12 +164,11 @@ const getUserCart = asyncHandler(async (req, res, next) => {
         }
     })
 
+
     let cartItems = await Promise.all(cartPromise)
 
 
-    cartItems = cartItems.filter(item => item !== null &&  item?.stock > 0)
-
-    // const notAvailable = cart.filter(item => !cartItems.some(cartItem => cartItem.name === item.productName));
+    cartItems = cartItems.filter(item => item !== null)
     
     const updatedCart = cartItems.map(cartItem => {
         const match = cart.find(item => {

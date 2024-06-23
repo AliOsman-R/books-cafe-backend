@@ -3,11 +3,12 @@ const Cafe = require('../models/cafeModel')
 const Image = require('../models/imageModel');
 const User = require('../models/userModel');
 const Order = require('../models/orderModel');
-// const crypto = require('crypto');
 const { getImage} = require('../utils/Images');
+const { getCafeOwnerData } = require('../utils/cafeUtils');
 
 const cafeSwitch =asyncHandler( async (req, res, next) => {
-    const {name, state, city, bio, address, phoneNumber, latitude, longitude, orderMethods, deliveryEst, deliveryFee, workingDays} = req.body;
+    const {name, state, city, bio, address, phoneNumber, latitude, 
+    longitude, orderMethods, deliveryEst, deliveryFee, workingDays} = req.body;
     const id = req.params.id
     const user = await User.findOne({_id:id})
 
@@ -44,12 +45,12 @@ const cafeSwitch =asyncHandler( async (req, res, next) => {
         bio,
         imageId:image._id,
         phoneNumber,
-        orderMethods:orderMethods,
-        deliveryEst:deliveryEst,
-        deliveryFee:deliveryFee,
-        coordinates: [parseFloat(longitude), parseFloat(latitude)]  // Ensure that longitude comes first in the array
-        ,
-        workingDays
+        orderMethods,
+        deliveryEst,
+        deliveryFee,
+        workingDays,
+        sales:0,
+        coordinates: [parseFloat(longitude), parseFloat(latitude)] 
     })
 
     user.role = 'owner'
@@ -62,7 +63,6 @@ const cafeSwitch =asyncHandler( async (req, res, next) => {
 
     res.status(201).json({message:'Cafe created successfully', cafe, user:updatedUser})
 })
-
 
 const getUserCafe = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -95,11 +95,25 @@ const getUserCafe = asyncHandler(async (req, res, next) => {
     res.status(200).json({cafe})
 })
 
+const geAlltCafes = asyncHandler(async (req, res, next) => {
+    let cafes = await Cafe.find({isDeleted:false})
+    .populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
+
+    if(cafes?.length === 0)
+    {
+        res.status(404)
+        throw new Error("No cafes are avaialbe")
+    }
+
+    cafes = await getCafeOwnerData(cafes)
+    
+    res.status(200).json({cafes})
+})
 
 const getNearCafes = asyncHandler(async (req, res, next) => {
     const { latitude, longitude, maxDistance } = req.query;
 
-    const cafes = await Cafe.find({
+    let cafes = await Cafe.find({
       coordinates: {
         $near: {
           $geometry: {
@@ -112,57 +126,10 @@ const getNearCafes = asyncHandler(async (req, res, next) => {
       isDeleted:false
     }).populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
 
-    await Promise.all(cafes.map(async (cafe) => {
-        const foundUserImage  = await Image.findOne({_id:cafe.userId.imageId})
-        let cafeImagePromise, userImagePromise
-        if(cafe.imageId.imageName)
-        {
-            cafeImagePromise = getImage(cafe.imageId.imageName)
-        }
-        if(foundUserImage.imageName)
-        {
-            userImagePromise = getImage(foundUserImage.imageName)
-        }
-        const [cafeImage, userImage] = await Promise.all([cafeImagePromise, userImagePromise]);    
-
-       cafe['image'] = cafeImage || '';
-       cafe['ownerImage'] = userImage || '';
-       cafe['ownerName'] = cafe.userId.name
-    }))
+    cafes = await getCafeOwnerData(cafes)
 
     res.status(200).json({cafes})
 })
-
-
-const getCafeById = asyncHandler(async (req, res, next) => {
-    const id = req.params.id
-    const cafe = await Cafe.findOne({_id:id, isDeleted:false}).populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
-
-    if(!cafe)
-    {
-        res.status(400)
-        throw new Error(`The user doesnt have a cafe yet`)
-    }
-
-    const foundUserImage  = await Image.findOne({_id:cafe.userId.imageId})
-    let cafeImagePromise, userImagePromise
-    if(cafe.imageId.imageName)
-    {
-        cafeImagePromise = getImage(cafe.imageId.imageName)
-    }
-    if(foundUserImage.imageName)
-    {
-        userImagePromise = getImage(foundUserImage.imageName)
-    }
-    const [cafeImage, userImage] = await Promise.all([cafeImagePromise, userImagePromise]);    
-
-    cafe['image'] = cafeImage || '';
-    cafe['ownerImage'] = userImage || '';
-    cafe['ownerName'] = cafe.userId.name
-
-    res.status(200).json({cafe})
-})
-
 
 const updateCafe = asyncHandler(async (req, res, next) => {
     const cafeData = req.body;
@@ -180,43 +147,11 @@ const updateCafe = asyncHandler(async (req, res, next) => {
         res.status(400)
         throw new Error(`The user doesnt have a cafe yet`)
     }
-
     
     const updatedCafe = await Cafe.findOneAndUpdate({_id:cafe._id}, cafeData, {new: true})
 
     res.status(200).json({message:`information has been updated`,cafe:updatedCafe})
 })
-
-
-const geAlltCafes = asyncHandler(async (req, res, next) => {
-    const cafes = await Cafe.find({isDeleted:false}).populate({path:'userId imageId', select:"imageId name profileImage imageName"}).exec();
-
-    if(cafes?.length === 0)
-    {
-        res.status(404)
-        throw new Error("No cafes are avaialbe")
-    }
-
-    await Promise.all(cafes.map(async (cafe) => {
-        const foundUserImage  = await Image.findOne({_id:cafe.userId.imageId})
-        let cafeImagePromise, userImagePromise
-        if(cafe.imageId.imageName)
-        {
-            cafeImagePromise = getImage(cafe.imageId.imageName)
-        }
-        if(foundUserImage.imageName)
-        {
-            userImagePromise = getImage(foundUserImage.imageName)
-        }
-        const [cafeImage, userImage] = await Promise.all([cafeImagePromise, userImagePromise]);    
-
-        cafe['image'] = cafeImage || '';
-        cafe['ownerImage'] = userImage || '';
-        cafe['ownerName'] = cafe.userId.name
-    }))
-    res.status(200).json({cafes})
-})
-
 
 const switchToCustomer = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -242,7 +177,8 @@ const switchToCustomer = asyncHandler(async (req, res, next) => {
     orders.forEach((order) => {
         if(order.status === 'pending' || order.status === 'confirmed'){
             res.status(403)
-            throw new Error("Since there are some orders are pending or confirmed you won't be able to switch back unless they are delivered or cancelled")
+            throw new Error("Since there are some orders are pending or " +
+            "confirmed you won't be able to switch back unless they are delivered or cancelled")
         }
     })
 
@@ -253,7 +189,6 @@ const switchToCustomer = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({user:{role:'customer'}})
 })
-
 
 const switchToExistentCafe = asyncHandler(async (req, res, next) => {
     const id = req.params.id
@@ -283,13 +218,11 @@ const switchToExistentCafe = asyncHandler(async (req, res, next) => {
 })
 
 
-
 module.exports = {
     cafeSwitch,
     getUserCafe,
     updateCafe,
     geAlltCafes,
-    getCafeById,
     getNearCafes,
     switchToCustomer,
     switchToExistentCafe

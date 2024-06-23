@@ -1,5 +1,5 @@
 const express = require('express');
-const {isUserAuth, verifyToken} = require('../middleware/verifyToken')
+const {isUserAuth} = require('../middleware/verifyToken')
 const {userSignup, userLogin, userLogout, userVerifyEmail, userForgotPass,
      userVerifyResetPass, userResetPass, userAuth} = require("../controllers/authController")
 

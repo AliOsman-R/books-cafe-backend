@@ -4,12 +4,9 @@ const {getCafeDashboard} = require('../controllers/dashboardController');
 
 const router = express.Router()
 
-
 router.use(verifyToken);
 
-
 router.get('/:id', getCafeDashboard)
-
 
 
 module.exports = router;

@@ -60,7 +60,6 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     res.status(201).json({newMessage, message:'Send message successfully'})
 })
 
-
 const getMessages = asyncHandler( async (req, res, next) => {
     const receiverId = req.params.id
     const senderId = req.user._id
