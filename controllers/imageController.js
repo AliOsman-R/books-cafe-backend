@@ -81,7 +81,6 @@ const updateImages = asyncHandler ( async (req, res, next) => {
             if (changedImage && changedImage.imageId) {
                 return changedImage.imageId._id === oriImage.imageId._id;
             }
-            // If changedImage or changedImage.imageId is undefined, return false
             return false;
         })
     );

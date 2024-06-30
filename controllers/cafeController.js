@@ -55,10 +55,11 @@ const cafeSwitch =asyncHandler( async (req, res, next) => {
 
     user.role = 'owner'
     user.cafeId = cafe._id
-    const updatedUserInfo =await user.save()
+    const updatedUserInfo = await user.save()
     
     const updatedUser = {
-        role:updatedUserInfo.role
+        role:updatedUserInfo.role,
+        cafeId:updatedUserInfo.cafeId
     } 
 
     res.status(201).json({message:'Cafe created successfully', cafe, user:updatedUser})

@@ -56,10 +56,15 @@ const userLogin = asyncHandler(async(req,res, next) => {
     }
 
     const foundUser = await User.findOne({email:email.toLowerCase()}).populate({ path: 'imageId'}).exec();
-    
-    if(!foundUser || !(await bcrypt.compare(password, foundUser?.password))){
+
+    if(!foundUser){
         res.status(401)
-        throw new Error("Email or Password is not valid");
+        throw new Error("No user found for that email");
+    }
+    
+    if(!(await bcrypt.compare(password, foundUser?.password))){
+        res.status(401)
+        throw new Error("Wrong password provided for that user");
     }
 
     if(!foundUser.verified){

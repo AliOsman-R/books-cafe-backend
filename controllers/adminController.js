@@ -39,7 +39,6 @@ const adminLogin = asyncHandler( async (req, res, next) => {
     res.status(200).json({adminAuth: true, admin:{userName:foundAmdin.userName}})
 })
 
-
 const createAdmin = asyncHandler( async (req, res, next) => {
     const {userName, password} = req.body
 
@@ -73,19 +72,16 @@ const createAdmin = asyncHandler( async (req, res, next) => {
     res.status(201).json({admin})
 })
 
-
 const adminLogout = asyncHandler( async (req, res, next) => {
     res.clearCookie('access_token')
     res.send('Cookie has been deleted successfully');
 })
-
 
 const getAllUsers  = asyncHandler( async (req, res, next) => {
     const users = await User.find().populate({path:'cafeId', select:'name createdAt'}).exec();
 
     res.status(200).json(users)
 })
-
 
 const deleteUser = asyncHandler( async (req, res, next) => {
     const id = req.params.id;
@@ -123,6 +119,7 @@ const deleteUser = asyncHandler( async (req, res, next) => {
             Book.deleteMany({ cafeId: cafe._id }),
             Menu.deleteMany({ cafeId: cafe._id }),
             Event.deleteMany({ cafeId: cafe._id }),
+            Image.deleteOne({ _id: cafe.imageId }),
             // Order.deleteMany({ cafeId: cafe._id }),
         ]);
     }
@@ -137,7 +134,6 @@ const deleteUser = asyncHandler( async (req, res, next) => {
 
     res.status(200).json({ message: 'User and all associated data deleted' });
 })
-
 
 const adminAuth = asyncHandler( async (req, res,next) => {
 

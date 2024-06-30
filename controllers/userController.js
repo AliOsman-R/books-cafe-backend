@@ -25,9 +25,20 @@ const userUpdateInfo = asyncHandler( async (req, res, next) => {
     
     if(email)
     {
-        await generateVerifyEmail(user)
+        const existentUser = await User.findOne({email})
+
+        if(existentUser){
+            res.status(403)
+            throw new Error(`An existent user with this email, please use another one`)
+        }
+
+        await generateVerifyEmail({...user._doc, email})
+        
         emailMessage='An email sent to your email address please verify it to use the new email'
-        data['newEmail'] = email;
+
+        user['newEmail'] = email.toLowerCase();
+
+        await user.save()
     }
   
     const updatedUserInfo = await User.findOneAndUpdate({_id:user._id}, rest, {new: true})
@@ -99,7 +110,8 @@ const getUser = asyncHandler( async(req, res, next) => {
     const toChatUser = {
         userId:{
             name:user.name,
-            profileImage:user.profileImage
+            profileImage:user.profileImage,
+            _id:user._id
         }
     }
 
@@ -163,6 +175,7 @@ const deleteAccount = asyncHandler( async(req, res, next) => {
             Book.deleteMany({ cafeId: cafe._id }),
             Menu.deleteMany({ cafeId: cafe._id }),
             Event.deleteMany({ cafeId: cafe._id }),
+            Image.deleteOne({ _id: cafe.imageId }),
             // Order.deleteMany({ cafeId: cafe._id }),
         ]);
     }
