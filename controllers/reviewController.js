@@ -91,11 +91,14 @@ const updateReview = asyncHandler(async (req, res, next) => {
         {
             const totalReviews = item.numOfReviews || 0;
             const currentAverageRating = item.averageRating || 0;
-            
-            let newAverageRating = ((currentAverageRating * totalReviews) + rating) / (totalReviews);
+            let newAverageRating
+            if (totalReviews === 1) {
+                newAverageRating = rating;
+            } else {
+                newAverageRating = ((currentAverageRating * totalReviews) - oldRating + rating) / totalReviews;
+            }
+            //  = ((currentAverageRating * totalReviews) - oldRating + rating) / (totalReviews);
             newAverageRating = Math.round(newAverageRating * 2) / 2;
-            console.log(newAverageRating)
-
             newAverageRating = Math.max(0, Math.min(5, newAverageRating));
 
             item.averageRating = newAverageRating;

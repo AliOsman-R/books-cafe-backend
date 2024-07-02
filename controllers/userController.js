@@ -190,9 +190,118 @@ const deleteAccount = asyncHandler( async(req, res, next) => {
         User.deleteOne({_id:user._id})
     ]);
 
+    res.clearCookie('access_token')
+
     res.status(200).json({ message: 'User and all associated data deleted' });
 })
 
+// const usersData = [
+//       {
+//         name: 'Bob',
+//         email: 'bob@example.com',
+//         password: 'passworD1@',
+//         cafe: {
+//             name: "Bob's Cafe",
+//             state: 'Kuala Lumpur',
+//             city: 'Kuala Lumpur',
+//             bio: 'Welcome to Bob\'s Cafe!',
+//             address: '456 Jalan Coffee',
+//             phoneNumber: '0987654321',
+//             latitude: '3.1390',
+//             longitude: '101.6869',
+//             orderMethods: {
+//                 pickUpAtCafe: true,
+//                 delivery: true
+//             },
+//             deliveryEst: '45 minutes',
+//             deliveryFee: 7,
+//             workingDays: [
+//                 { day: 'Monday', startTime: '10:00', endTime: '22:00' },
+//                 { day: 'WedWednesday', startTime: '10:00', endTime: '22:00' },
+//             ]
+//         }
+//     }
+//     // {
+//     //     name: 'Charlie',
+//     //     email: 'charlie@example.com',
+//     //     password: 'passworD1@'
+//     // }
+// ];
 
-module.exports = {userUpdateInfo, userUpdatePassword, getChatUsers, getUser, deleteAccount}
+const generateUser = asyncHandler( async(req, res, next) => {
+    const signupPromises = usersData.map(async (userData) => {
+        const { name, email, password, cafe } = userData;
+
+        if (!name || !email || !password) {
+            throw new Error("All fields are required");
+        }
+
+        const foundUser = await User.findOne({ email: email.toLowerCase() });
+
+        if (foundUser) {
+            throw new Error(`User already registered with this email ${email}`);
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const image = await Image.create({ imageName: '' });
+
+        const newUser = await User.create({
+            email: email.toLowerCase(),
+            name,
+            imageId: image._id,
+            password: hashedPassword,
+            role: 'customer',
+            verified:true
+        });
+
+        if (!newUser) {
+            throw new Error("User creation failed");
+        }
+
+        const cafeImage = await Image.create({ imageName: '' });
+
+        const newCafe = await Cafe.create({
+            userId: newUser._id,
+            name: cafe.name,
+            ownerName: newUser.name,
+            ownerImage: newUser.profileImage,
+            state: cafe.state,
+            city: cafe.city,
+            address: cafe.address,
+            bio: cafe.bio,
+            imageId: cafeImage._id,
+            phoneNumber: cafe.phoneNumber,
+            coordinates: [parseFloat(cafe.longitude), parseFloat(cafe.latitude)],
+            orderMethods: {
+                pickUpAtCafe: cafe.orderMethods.pickUpAtCafe,
+                delivery: cafe.orderMethods.delivery
+            },
+            deliveryEst: cafe.deliveryEst,
+            deliveryFee: cafe.deliveryFee,
+            workingDays: cafe.workingDays.map(day => ({
+                day: day.day,
+                startTime: day.startTime,
+                endTime: day.endTime
+            }))
+        });
+
+        if (!newCafe) {
+            throw new Error("Cafe creation failed");
+        }
+
+        newUser.role = 'owner';
+        newUser.cafeId = newCafe._id;
+        await newUser.save();
+
+
+        return { message: `User ${name} signed up successfully with cafe` };
+    });
+
+  
+    const signupResults = await Promise.all(signupPromises);
+    res.status(201).json(signupResults);
+})
+
+
+module.exports = {userUpdateInfo, userUpdatePassword, getChatUsers, getUser, deleteAccount, generateUser}
 

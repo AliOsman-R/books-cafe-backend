@@ -101,7 +101,8 @@ const userLogin = asyncHandler(async(req,res, next) => {
         firstAddress:foundUser.firstAddress,
         secondAddress:foundUser.secondAddress,
         profileImage:imageUrl || '',
-        imageId:foundUser.imageId._id
+        imageId:foundUser.imageId._id,
+        phoneNumber:foundUser.phoneNumber
     }
 
     if(foundUser.cafeId)
