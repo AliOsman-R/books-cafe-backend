@@ -5,26 +5,33 @@ const crypto = require('crypto');
 
 exports.sendEmail = asyncHandler(async (email, subject, html ) => {
 
-    const transporter = nodemailer.createTransport({
-        service:process.env.SERVICE,
-        host:process.env.HOST,
-        port:Number(process.env.EMAIL_PORT),
-        secure:Boolean(process.env.SECURE),
-        auth:{
-            user:process.env.USER,
-            pass:process.env.PASS
-        }
-    })
+    try {
+        const transporter = nodemailer.createTransport({
+            service: process.env.SERVICE,
+            host: process.env.HOST,
+            port: Number(process.env.EMAIL_PORT),
+            secure: Boolean(process.env.SECURE),
+            auth: {
+                user: process.env.USER,
+                pass: process.env.PASS
+            }
+        });
 
-    const info = await transporter.sendMail({
-        from: '"CafeX" "<support@Cafex.com>"',
-        to: email,
-        subject: subject,
-        text: subject,
-        html:html,
-    });
+        const info = await transporter.sendMail({
+            from: '"CafeX" <support@Cafex.com>',
+            to: email,
+            subject: subject,
+            text: subject,
+            html: html
+        });
 
-      return info.messageId
+        console.log('Email sent: ' + info.response);
+        return info.messageId
+
+    } catch (error) {
+        console.error('Error sending email:', error);
+    }
+
 })
 
 exports.generateEmailTemplate = (title, name, message) => {
@@ -94,6 +101,7 @@ exports.generateVerifyEmail = async (user) => {
     <a href="${url}">${url}</a>
     `
     const html = this.generateEmailTemplate('Verify Your Email', user.name, htmlStr)
+    console.log("run")
     
     await this.sendEmail(user.email, 'CafeX - Verify Your Email', html)
 }

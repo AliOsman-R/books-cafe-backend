@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "build":"echo 'No build step needed for Express"
   },
   "author": "",
   "license": "ISC",

@@ -22,40 +22,45 @@ const admin = require('./routes/adminRoutes');
 const message = require('./routes/messageRoutes');
 const { app, server } = require('./sockets/socket');
 
-connectDb();
-// const app = express();
-const port = process.env.PORT || 5001;
+const startServer = async () => {
+    await connectDb();
+    // const app = express();
+    const port = process.env.PORT || 5001;
+    
+    app.use(cors({ credentials: true, origin: [process.env.BASE_URL] }));
+    
+    app.use(bodyParser.json({ limit: '50mb' }));
+    app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+    
+    app.use(express.json())
+    app.use(express.static(path.join(__dirname, 'public')))
+    
+    
+    app.use('/api/v1/auth', auth);
+    app.use('/api/v1/user', users);
+    app.use('/api/v1/cafe', cafes);
+    app.use('/api/v1/image', images);
+    app.use('/api/v1/books', books);
+    app.use('/api/v1/menu', menu);
+    app.use('/api/v1/events', events);
+    app.use('/api/v1/reviews', reviews);
+    app.use('/api/v1/cart', cart);
+    app.use('/api/v1/orders', order);
+    app.use('/api/v1/dashboard', dashboard);
+    app.use('/api/v1/admin', admin);
+    app.use('/api/v1/messages', message);
+    
+    app.all('*', (req,res) => {
+        res.status(404).json({message:`No route found with this "${req.originalUrl}" endpoint!`})
+    })
+    
+    app.use(errorHandler);
+    
+    
+    server.listen(port, ()=>{
+        console.log(`server listen to port ${port}`)
+    })
+}
 
-app.use(cors({ credentials: true, origin: ['http://localhost:3000'] }));
 
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-
-app.use(express.json())
-app.use(express.static(path.join(__dirname, 'public')))
-
-
-app.use('/api/v1/auth', auth);
-app.use('/api/v1/user', users);
-app.use('/api/v1/cafe', cafes);
-app.use('/api/v1/image', images);
-app.use('/api/v1/books', books);
-app.use('/api/v1/menu', menu);
-app.use('/api/v1/events', events);
-app.use('/api/v1/reviews', reviews);
-app.use('/api/v1/cart', cart);
-app.use('/api/v1/orders', order);
-app.use('/api/v1/dashboard', dashboard);
-app.use('/api/v1/admin', admin);
-app.use('/api/v1/messages', message);
-
-app.all('*', (req,res) => {
-    res.status(404).json({message:`No route found with this "${req.originalUrl}" endpoint!`})
-})
-
-app.use(errorHandler);
-
-
-server.listen(port, ()=>{
-    console.log(`server listen to port ${port}`)
-})
+startServer()
