@@ -35,6 +35,9 @@ const startServer = async () => {
     app.use(express.json())
     app.use(express.static(path.join(__dirname, 'public')))
     
+    app.get("test", (req,res) => {
+        res.status(200).json({message:"success"})
+    })
     
     app.use('/api/v1/auth', auth);
     app.use('/api/v1/user', users);
@@ -64,3 +67,5 @@ const startServer = async () => {
 
 
 startServer()
+
+export default app
