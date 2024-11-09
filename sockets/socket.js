@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
 	cors: {
-		origin: [process.env.BASE_URL],
+		origin: [process.env.BASE_URL, "https://books-cafe-management.vercel.app"],
 	},
 });
 
