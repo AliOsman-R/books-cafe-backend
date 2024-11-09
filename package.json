@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "build":"echo 'No build step needed for Express"
+    "build":"echo 'No build step needed for Express'",
+    "vercel-build":"echo vercel"
   },
   "author": "",
   "license": "ISC",
