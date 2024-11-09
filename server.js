@@ -20,8 +20,7 @@ const order = require('./routes/orderRoutes');
 const dashboard = require('./routes/dashboardRoutes');
 const admin = require('./routes/adminRoutes');
 const message = require('./routes/messageRoutes');
-// const { app, server } = require('./sockets/socket');
-const app = express();
+const { app, server } = require('./sockets/socket');
 
 const startServer = async () => {
     await connectDb();
@@ -61,11 +60,7 @@ const startServer = async () => {
     app.use(errorHandler);
     
     
-    // server.listen(port, ()=>{
-    //     console.log(`server listen to port ${port}`)
-    // })
-
-    app.listen(port, ()=>{
+    server.listen(port, ()=>{
         console.log(`server listen to port ${port}`)
     })
 }
