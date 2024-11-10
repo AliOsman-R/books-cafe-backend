@@ -4,7 +4,13 @@ const Admin = require('../models/adminModel')
 const jwt = require('jsonwebtoken');
 
 const isAdminAuth = asyncHandler( async (req, res, next) => {
-    const token = req.headers.cookie?.split('=')[1]
+    const cookies = req.headers.cookie?.split('; ').reduce((acc, cookie) => {
+        const [name, value] = cookie.split('=');
+        acc[name] = value;
+        return acc;
+        }, {});
+        
+    const token = cookies?.access_token;
     if (!token) {
         req.adminAuth = false
     }
@@ -45,7 +51,13 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
 })
 
 const isUserAuth = asyncHandler( async (req, res, next) => {
-    const token = req.headers.cookie?.split('=')[1]
+    const cookies = req.headers.cookie?.split('; ').reduce((acc, cookie) => {
+        const [name, value] = cookie.split('=');
+        acc[name] = value;
+        return acc;
+        }, {});
+        
+    const token = cookies?.access_token;
     if (!token) {
         req.auth = false
     }
@@ -97,7 +109,13 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
 })
 
 const verifyToken = asyncHandler( async (req,res,next) => {
-const token = req.headers.cookie?.split('=')[1];
+const cookies = req.headers.cookie?.split('; ').reduce((acc, cookie) => {
+    const [name, value] = cookie.split('=');
+    acc[name] = value;
+    return acc;
+    }, {});
+    
+const token = cookies?.access_token;
 if(!token)
 {
     res.status(401)
@@ -108,6 +126,7 @@ jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
     try{
         if(err)
         {
+            console.log("error run")
             res.status(401)
             res.clearCookie('access_token')
             throw new Error("User is not authorized")
