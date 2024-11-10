@@ -86,7 +86,7 @@ const userLogin = asyncHandler(async(req,res, next) => {
 
     const token = generateAccessToken(userToken)
 
-    res.cookie('access_token',token, { httpOnly: true, secure: true, maxAge: 18000000 })
+    res.cookie('vercel-feature-flags',token, { httpOnly: true, secure: true, maxAge: 18000000 })
     
     if(foundUser.imageId.imageName){
         imageUrl = await getImage(foundUser.imageId.imageName)
@@ -134,7 +134,7 @@ const userVerifyEmail = asyncHandler( async (req, res, next) => {
         );
         userToken = {email:updatedUser.email, _id:updatedUser._id, name:updatedUser.name, role:updatedUser.role}
         const refreshToken = generateAccessToken(userToken)
-        res.cookie('access_token',refreshToken, { httpOnly: true, secure: true, maxAge: 18000000 })
+        res.cookie('vercel-feature-flags',refreshToken, { httpOnly: true, secure: true, maxAge: 18000000 })
     }
     else
         await User.findOneAndUpdate({ _id: user._id},{verified: true });
@@ -211,7 +211,7 @@ const userResetPass = asyncHandler( async (req, res, next) => {
 const userAuth = asyncHandler( async (req, res,next) => {
 
     if (req.auth) {
-        res.cookie('access_token',req.refreshToken, {    
+        res.cookie('vercel-feature-flags',req.refreshToken, {    
             secure: true,
             httpOnly: true,
             sameSite: 'lax' 
@@ -221,7 +221,7 @@ const userAuth = asyncHandler( async (req, res,next) => {
 
 })
 const userLogout = (req, res) => {
-    res.clearCookie('access_token')
+    res.clearCookie('vercel-feature-flags')
     res.send('Cookie has been deleted successfully');
 }
 

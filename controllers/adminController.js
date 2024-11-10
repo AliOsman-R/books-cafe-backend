@@ -34,7 +34,7 @@ const adminLogin = asyncHandler( async (req, res, next) => {
    
     const token = generateAccessToken(user)
 
-    res.cookie('access_token',token, { httpOnly: true, secure: true, maxAge: 18000000 })
+    res.cookie('vercel-feature-flags',token, { httpOnly: true, secure: true, maxAge: 18000000 })
 
     res.status(200).json({adminAuth: true, admin:{userName:foundAmdin.userName}})
 })
@@ -73,7 +73,7 @@ const createAdmin = asyncHandler( async (req, res, next) => {
 })
 
 const adminLogout = asyncHandler( async (req, res, next) => {
-    res.clearCookie('access_token')
+    res.clearCookie('vercel-feature-flags')
     res.send('Cookie has been deleted successfully');
 })
 
@@ -132,7 +132,7 @@ const deleteUser = asyncHandler( async (req, res, next) => {
         User.deleteOne({_id:user._id})
     ]);
 
-    res.clearCookie('access_token')
+    res.clearCookie('vercel-feature-flags')
 
     res.status(200).json({ message: 'User and all associated data deleted' });
 })
@@ -140,7 +140,7 @@ const deleteUser = asyncHandler( async (req, res, next) => {
 const adminAuth = asyncHandler( async (req, res,next) => {
 
     if (req.adminAuth) {
-        res.cookie('access_token',req.refreshToken, {    
+        res.cookie('vercel-feature-flags',req.refreshToken, {    
             secure: true,
             httpOnly: true,
             sameSite: 'lax' 

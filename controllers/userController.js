@@ -190,7 +190,7 @@ const deleteAccount = asyncHandler( async(req, res, next) => {
         User.deleteOne({_id:user._id})
     ]);
 
-    res.clearCookie('access_token')
+    res.clearCookie('vercel-feature-flags')
 
     res.status(200).json({ message: 'User and all associated data deleted' });
 })
