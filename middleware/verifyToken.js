@@ -12,7 +12,7 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
         try {
             if (error ) {
-                res.clearCookie('vercel-feature-flags')
+                res.clearCookie('access_token')
                 req.adminAuth = false
                 console.log("err")
                 return next()
@@ -22,7 +22,7 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
             const foundAdmin = await Admin.findOne({userName:decodedAdmin.userName});
 
             if (!foundAdmin) {
-                res.clearCookie('vercel-feature-flags')
+                res.clearCookie('access_token')
                 req.adminAuth = false
                 return next()
             }
@@ -53,7 +53,7 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
         try {
             if (error ) {
-                res.clearCookie('vercel-feature-flags')
+                res.clearCookie('access_token')
                 req.auth = false
                 console.log("err")
                 return next()
@@ -63,7 +63,7 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
             const foundUser = await User.findOne({email:decodedUser.email});
 
             if (!foundUser) {
-                res.clearCookie('vercel-feature-flags')
+                res.clearCookie('access_token')
                 req.auth = false
                 return next()
             }
@@ -109,7 +109,7 @@ jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
         if(err)
         {
             res.status(401)
-            res.clearCookie('vercel-feature-flags')
+            res.clearCookie('access_token')
             throw new Error("User is not authorized")
         }
         
@@ -118,12 +118,12 @@ jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
         req.user = {...user}
         req.refreshToken = refreshToken
         req.token = token
-        res.cookie('vercel-feature-flags',refreshToken, { httpOnly: true, secure: true, maxAge: 18000000 })
+        res.cookie('access_token',refreshToken, { httpOnly: true, secure: true, maxAge: 18000000 })
         next()
     }
     catch (error) {
         console.log(error);
-        res.clearCookie('vercel-feature-flags')
+        res.clearCookie('access_token')
         return res.status(401).json({
             message: 'Unauthorized',
             data: {}
