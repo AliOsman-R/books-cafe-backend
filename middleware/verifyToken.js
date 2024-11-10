@@ -9,7 +9,7 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
         req.adminAuth = false
     }
 
-    jwt.verify(token, process.env.vercel-feature-flags_SECRET, async (error, decode) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
         try {
             if (error ) {
                 res.clearCookie('vercel-feature-flags')
@@ -50,7 +50,7 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
         req.auth = false
     }
 
-    jwt.verify(token, process.env.vercel-feature-flags_SECRET, async (error, decode) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
         try {
             if (error ) {
                 res.clearCookie('vercel-feature-flags')
@@ -104,7 +104,7 @@ if(!token)
     throw new Error("User is not authorized or token is missing")
 }
 
-jwt.verify(token, process.env.vercel-feature-flags_SECRET, async (err, decode)=>{
+jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
     try{
         if(err)
         {
@@ -133,7 +133,7 @@ jwt.verify(token, process.env.vercel-feature-flags_SECRET, async (err, decode)=>
 })
 
 function generateAccessToken(user) {
-    return jwt.sign({user}, process.env.vercel-feature-flags_SECRET, { expiresIn: '5h' })
+    return jwt.sign({user}, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5h' })
 }
 
 module.exports = {verifyToken, isUserAuth, isAdminAuth, generateAccessToken};
