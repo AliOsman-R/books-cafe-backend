@@ -10,7 +10,7 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
         return acc;
         }, {});
         
-    const token = cookies?.access_token;
+    const token = cookies?.access_token || req.headers.cookie?.split('=')[1];
     if (!token) {
         req.adminAuth = false
     }
@@ -57,7 +57,7 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
         return acc;
         }, {});
         
-    const token = cookies?.access_token;
+    const token = cookies?.access_token || req.headers.cookie?.split('=')[1];
     if (!token) {
         req.auth = false
     }
@@ -115,7 +115,7 @@ const cookies = req.headers.cookie?.split('; ').reduce((acc, cookie) => {
     return acc;
     }, {});
     
-const token = cookies?.access_token;
+const token = cookies?.access_token || req.headers.cookie?.split('=')[1];
 if(!token)
 {
     res.status(401)
