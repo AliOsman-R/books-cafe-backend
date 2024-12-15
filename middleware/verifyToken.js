@@ -10,7 +10,7 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
         return acc;
         }, {});
         
-    const token = cookies?.access_token || req.headers.cookie?.split('=')[1];
+    const token = cookies?.access_token_admin || req.headers.cookie?.split('=')[1];
     if (!token) {
         req.adminAuth = false
     }
@@ -18,7 +18,7 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
         try {
             if (error ) {
-                res.clearCookie('access_token')
+                res.clearCookie('access_token_admin')
                 req.adminAuth = false
                 console.log("err")
                 return next()
@@ -26,9 +26,9 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
 
             const decodedAdmin = decode.user
             const foundAdmin = await Admin.findOne({userName:decodedAdmin.userName});
-
+            
             if (!foundAdmin) {
-                res.clearCookie('access_token')
+                res.clearCookie('access_token_admin')
                 req.adminAuth = false
                 return next()
             }
@@ -108,19 +108,19 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
     })
 })
 
-const verifyToken = asyncHandler( async (req,res,next) => {
-const cookies = req.headers.cookie?.split('; ').reduce((acc, cookie) => {
-    const [name, value] = cookie.split('=');
-    acc[name] = value;
-    return acc;
-    }, {});
-    
-const token = cookies?.access_token || req.headers.cookie?.split('=')[1];
-if(!token)
-{
-    res.status(401)
-    throw new Error("User is not authorized or token is missing")
-}
+const verifyToken = asyncHandler( async (req, res, next) => {
+    const cookies = req.headers.cookie?.split('; ').reduce((acc, cookie) => {
+        const [name, value] = cookie.split('=');
+        acc[name] = value;
+        return acc;
+        }, {});
+        
+    const token = cookies?.access_token || req.headers.cookie?.split('=')[1];
+    if(!token)
+    {
+        res.status(401)
+        throw new Error("User is not authorized or token is missing")
+    }
 
 jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
     try{
