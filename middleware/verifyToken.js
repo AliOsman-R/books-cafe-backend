@@ -18,7 +18,7 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
         try {
             if (error ) {
-                res.clearCookie('access_token_admin')
+                res.clearCookie('access_token_admin', { sameSite: 'None', secure: true })
                 req.adminAuth = false
                 console.log("err")
                 return next()
@@ -28,7 +28,7 @@ const isAdminAuth = asyncHandler( async (req, res, next) => {
             const foundAdmin = await Admin.findOne({userName:decodedAdmin.userName});
             
             if (!foundAdmin) {
-                res.clearCookie('access_token_admin')
+                res.clearCookie('access_token_admin', { sameSite: 'None', secure: true })
                 req.adminAuth = false
                 return next()
             }
@@ -65,7 +65,7 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error, decode) => {
         try {
             if (error ) {
-                res.clearCookie('access_token')
+                res.clearCookie('access_token', { sameSite: 'None', secure: true })
                 req.auth = false
                 console.log("err")
                 return next()
@@ -75,7 +75,7 @@ const isUserAuth = asyncHandler( async (req, res, next) => {
             const foundUser = await User.findOne({email:decodedUser.email});
 
             if (!foundUser) {
-                res.clearCookie('access_token')
+                res.clearCookie('access_token', { sameSite: 'None', secure: true })
                 req.auth = false
                 return next()
             }
@@ -128,7 +128,7 @@ jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
         {
             console.log("error run")
             res.status(401)
-            res.clearCookie('access_token')
+            res.clearCookie('access_token', { sameSite: 'None', secure: true })
             throw new Error("User is not authorized")
         }
         
@@ -142,7 +142,7 @@ jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
     }
     catch (error) {
         console.log(error);
-        res.clearCookie('access_token')
+        res.clearCookie('access_token', { sameSite: 'None', secure: true })
         return res.status(401).json({
             message: 'Unauthorized',
             data: {}

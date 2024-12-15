@@ -73,7 +73,7 @@ const createAdmin = asyncHandler( async (req, res, next) => {
 })
 
 const adminLogout = asyncHandler( async (req, res, next) => {
-    res.clearCookie('access_token_admin')
+    res.clearCookie('access_token_admin', { sameSite: 'None', secure: true })
     res.send('Cookie has been deleted successfully');
 })
 

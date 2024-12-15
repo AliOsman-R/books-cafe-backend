@@ -222,7 +222,7 @@ const userAuth = asyncHandler( async (req, res,next) => {
 
 })
 const userLogout = (req, res) => {
-    res.clearCookie('access_token')
+    res.clearCookie('access_token', { sameSite: 'None', secure: true })
     res.send('Cookie has been deleted successfully');
 }
 
