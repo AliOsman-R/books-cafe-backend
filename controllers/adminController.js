@@ -34,7 +34,7 @@ const adminLogin = asyncHandler( async (req, res, next) => {
    
     const token = generateAccessToken(user)
 
-    res.cookie('access_token_admin',token, { httpOnly: true, secure: true, maxAge: 18000000 })
+    res.cookie('access_token_admin',token, { httpOnly: true, secure: true, maxAge: 18000000, sameSite: 'None', })
 
     res.status(200).json({adminAuth: true, admin:{userName:foundAmdin.userName}})
 })

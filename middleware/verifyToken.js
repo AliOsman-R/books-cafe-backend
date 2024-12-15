@@ -137,7 +137,7 @@ jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decode)=>{
         req.user = {...user}
         req.refreshToken = refreshToken
         req.token = token
-        res.cookie('access_token',refreshToken, { httpOnly: true, secure: true, maxAge: 18000000,  domain: 'https://books-cafe-backend.vercel.app', })
+        res.cookie('access_token',refreshToken, { httpOnly: true, secure: true, maxAge: 18000000,  domain: 'https://books-cafe-backend.vercel.app',   sameSite: 'None', })
         next()
     }
     catch (error) {

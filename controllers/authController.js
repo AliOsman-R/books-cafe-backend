@@ -86,7 +86,7 @@ const userLogin = asyncHandler(async(req,res, next) => {
 
     const token = generateAccessToken(userToken)
 
-    res.cookie('access_token',token, { httpOnly: true, secure: true, maxAge: 18000000 })
+    res.cookie('access_token',token, { httpOnly: true, secure: true, maxAge: 18000000, sameSite: 'None', })
     
     if(foundUser.imageId.imageName){
         imageUrl = await getImage(foundUser.imageId.imageName)
