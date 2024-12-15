@@ -143,7 +143,8 @@ const adminAuth = asyncHandler( async (req, res,next) => {
         res.cookie('access_token_admin', req.refreshToken, {    
             secure: true,
             httpOnly: true,
-            sameSite: 'lax' 
+            sameSite: 'lax',
+            domain: 'https://books-cafe-backend.vercel.app', 
         });
     }
     res.json({adminAuth: req.adminAuth, admin: req.admin})

@@ -27,6 +27,8 @@ const startServer = async () => {
     // const app = express();
     const port = process.env.PORT || 5001;
     
+    app.set('trust proxy', 1)
+    
     app.use(cors({ credentials: true, origin: [process.env.BASE_URL, "https://books-cafe-management.vercel.app"] }));
     
     app.use(bodyParser.json({ limit: '50mb' }));
