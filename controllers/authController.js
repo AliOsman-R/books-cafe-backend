@@ -214,7 +214,7 @@ const userAuth = asyncHandler( async (req, res,next) => {
         res.cookie('access_token',req.refreshToken, {    
             secure: true,
             httpOnly: true,
-            sameSite: 'lax',
+            sameSite: 'None',
             domain: 'https://books-cafe-backend.vercel.app',
         });
     }
